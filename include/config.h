@@ -1,136 +1,340 @@
 #pragma once
 #include <Arduino.h>
 
-// Pin Definitions
+//=============================================================================
+// VCU CONFIGURATION - Simplified Version
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// ESP32 PINOUT
+//-----------------------------------------------------------------------------
 namespace Pins {
-    // SPI Pins
-    constexpr uint8_t SCK = 4;
-    constexpr uint8_t MOSI = 6;
-    constexpr uint8_t MISO = 5;
-    constexpr uint8_t SPI_CS_PIN = 36;
-    constexpr uint8_t CAN_INT_PIN = 37;  // New interrupt pin
+    // SPI (CAN Controller)
+    constexpr uint8_t SPI_SCK  = 4;
+    constexpr uint8_t SPI_MISO = 5;
+    constexpr uint8_t SPI_MOSI = 6;
+    constexpr uint8_t CAN_CS   = 36;
+    constexpr uint8_t CAN_INT  = 37;
+    
+    // I2C (MCP23017 + ADS1115)
     constexpr uint8_t SDA = 1;
     constexpr uint8_t SCL = 2;
     
-    // Relay Pins
-    constexpr uint8_t PUMP = 38;         // Cooling Pump PW0
-    constexpr uint8_t PW1 = 39;
+    // Digital Inputs (Buttons/Switches)
+    constexpr uint8_t START_BUTTON      = 7;   // P1 - Wakeup Pin
+    constexpr uint8_t STOP_BUTTON       = 8;   // P2
+    constexpr uint8_t CHARGER_WAKEUP    = 9;   // P3 - NLG Wakeup
+    constexpr uint8_t RESET_BUTTON      = 10;  // P4 - External Reset
+    constexpr uint8_t IL_SWITCH         = 47;  // P5 - Interlock
     
-    constexpr uint8_t CONTACTOR = 11;    // HV Battery LPW0
-    constexpr uint8_t NLGKL15 = 12;      // NLG KL15 LPW1
-    constexpr uint8_t DMCKL15 = 13;      // DMC KL15 LWP2
-    constexpr uint8_t BSCKL15 = 14;      // BSC KL15 LWP3
-    constexpr uint8_t BCKLIGHT = 17;     // Reverse Signal LWP4
-    constexpr uint8_t LWP5 = 18;
-    constexpr uint8_t LWP6 = 21;
-    constexpr uint8_t LWP7 = 16;
+    // Power Outputs (Relays/Contactors)
+    constexpr uint8_t WATER_PUMP        = 38;  // PWI0
+    constexpr uint8_t MAIN_CONTACTOR    = 11;  // LPWI0
+    constexpr uint8_t DMC_ENABLE        = 12;  // LWPI1
+    constexpr uint8_t NLG_ENABLE        = 13;  // LWPI2
+    constexpr uint8_t BMS_ENABLE        = 14;  // LWPI3
+    constexpr uint8_t PRECHARGE_RELAY   = 17;  // LWPI4
+    constexpr uint8_t NEXTION_POWER     = 18;  // LWPI5
     
-    // Input Pins
-    constexpr uint8_t NLG_HW_Wakeup = 7;
-    constexpr uint8_t IGNITION = 8;
-    constexpr uint8_t UNLCKCON = 10;
-    constexpr uint32_t BUTTON_PIN_BITMASK = 0x380;
+    // Serial (Nextion Display)
+    constexpr uint8_t NEXTION_TX = 19;  // IO1
+    constexpr uint8_t NEXTION_RX = 20;  // IO2
+    
+    // MCP23017 Interrupts
+    constexpr uint8_t MCP_INT_A = 45;  // INTA - Low Expansion
+    constexpr uint8_t MCP_INT_B = 48;  // INTB - High Expansion
 }
 
-// CAN Message IDs
-namespace CANIds {
-    // BSC Messages
-    constexpr uint16_t BSC_COMM = 0x260;
-    constexpr uint16_t BSC_LIM = 0x261;
-    constexpr uint16_t BSC_VAL = 0x26A;
-    // DMC Messages
-    constexpr uint16_t DMCCTRL = 0x210;
-    constexpr uint16_t DMCLIM = 0x211;
-    constexpr uint16_t DMCCTRL2 = 0x212;
+//-----------------------------------------------------------------------------
+// I2C DEVICE ADDRESSES
+//-----------------------------------------------------------------------------
+namespace I2C {
+    constexpr uint8_t MCP23017_ADDR = 0x20;  // All address pins = 0
+    constexpr uint8_t ADS1115_ADDR  = 0x48;  // Default address
+}
+
+//-----------------------------------------------------------------------------
+// MCP23017 PIN MAPPING
+//-----------------------------------------------------------------------------
+namespace MCP {
+    // Port B (High Expansion) - Input Only
+    constexpr uint8_t BRAKE_SWITCH      = 7;  // GPB7 (P0HE)
+    constexpr uint8_t DIRECTION_TOGGLE  = 6;  // GPB6 (P1HE)
+    // GPB5-GPB0 unused
     
-    // NLG Messages
-    constexpr uint16_t NLG_DEM_LIM = 0x711;
-    constexpr uint16_t NLG_ACT_ERR = 0x799;
-    constexpr uint16_t NLG_ACT_LIM = 0x728;
-    constexpr uint16_t NLG_ACT_PLUG = 0x739;
-
-    constexpr uint16_t CONFIG_MESSAGE = 0x011; 
+    // Port A (Low Expansion) - Available for future use
+    // GPA0-GPA7 unused
 }
 
-// ESP-NOW Configuration
-namespace ESPNOW {
-    // Receiver MAC address - update with your display's MAC
-    // Format is in hex: {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF}
-    constexpr uint8_t RECEIVER_MAC[6] = {0xCC, 0x8D, 0xA2, 0xE9, 0x4E, 0xA8};
-    
-    // Message types
-    constexpr uint8_t MSG_TYPE_BMS = 0x01;
-    constexpr uint8_t MSG_TYPE_DMC_TEMP = 0x02;
-    
-    // Timing constants
-    constexpr unsigned long BMS_SEND_INTERVAL = 100;   // 1 second for BMS data
-    constexpr unsigned long DMC_SEND_INTERVAL = 100;   // 2 seconds for DMC data
-}
-
-// Timing Constants
-namespace Constants {
-    constexpr uint16_t FAST_CYCLE_MS = 50;
-    constexpr uint16_t SLOW_CYCLE_MS = 150;
-    constexpr uint16_t VERY_SLOW_CYCLE_MS = 100;
-    constexpr uint32_t MODE_CHANGE_DELAY_MS = 2000;
-    constexpr uint32_t UNLOCK_TIMEOUT_MS = 3000;
-    constexpr uint32_t PRECHARGE_TIMEOUT_MS = 5000;
-}
-
-// BSC Operating Modes
-namespace BSCModes {
-    constexpr uint8_t BSC6_BUCK = 0;
-    constexpr uint8_t BSC6_BOOST = 1;
-}
-
-// Charger States
-namespace ChargerStates {
-    // Actual States
-    constexpr uint8_t NLG_ACT_SLEEP = 0;
-    constexpr uint8_t NLG_ACT_WAKEUP = 1;
-    constexpr uint8_t NLG_ACT_STANDBY = 2;
-    constexpr uint8_t NLG_ACT_READY2CHARGE = 3;
-    constexpr uint8_t NLG_ACT_CHARGE = 4;
-    constexpr uint8_t NLG_ACT_SHUTDOWN = 5;
-    
-    // Demanded States
-    constexpr uint8_t NLG_DEM_STANDBY = 0;
-    constexpr uint8_t NLG_DEM_CHARGE = 1;
-    constexpr uint8_t NLG_DEM_SLEEP = 6;
-}
-
-// ADC Configuration
+//-----------------------------------------------------------------------------
+// ADS1115 ANALOG CHANNELS
+//-----------------------------------------------------------------------------
 namespace ADC {
-    constexpr uint8_t GASPEDAL1 = 0;
-    constexpr uint8_t GASPEDAL2 = 1;
-    constexpr uint8_t REVERSE = 0;
-    constexpr int MinValPot = 7140;
-    constexpr int MaxValPot = 23910;
+    constexpr uint8_t THROTTLE_POT = 0;  // AIN0
+    constexpr uint8_t REGEN_POT    = 1;  // AIN1
+    // AIN2, AIN3 unused
 }
 
-// Vehicle States
-enum class VehicleState {
-    STANDBY,
-    RUN,
-    CHARGING
+//-----------------------------------------------------------------------------
+// CAN MESSAGE IDS
+//-----------------------------------------------------------------------------
+namespace CAN_ID {
+    // 192S BMS Messages (Extended Format, 500kbps)
+    constexpr uint32_t BMS_TX = 0xF5;  // BMS sends on 0xF5
+    constexpr uint32_t BMS_RX = 0xF4;  // We send commands on 0xF4
+
+    // DMC Messages (Motor Controller)
+    constexpr uint16_t DMC_CONTROL      = 0x210;
+    constexpr uint16_t DMC_LIMITS       = 0x211;
+    constexpr uint16_t DMC_STATUS       = 0x258;
+    constexpr uint16_t DMC_POWER        = 0x259;
+    constexpr uint16_t DMC_TEMPERATURE  = 0x458;
+
+    // NLG5 Messages (Charger - from DBC file)
+    constexpr uint16_t NLG5_CTL         = 1560;  // 0x618 - Control TO charger
+    constexpr uint16_t NLG5_ST          = 1552;  // 0x610 - Status FROM charger
+    constexpr uint16_t NLG5_ACT_I       = 1553;  // 0x611 - Actuals I (V, A)
+    constexpr uint16_t NLG5_ACT_II      = 1554;  // 0x612 - Actuals II
+    constexpr uint16_t NLG5_TEMP        = 1555;  // 0x613 - Temperatures
+    constexpr uint16_t NLG5_ERR         = 1556;  // 0x614 - Errors
+    constexpr uint16_t NLG5_DIAG_RX     = 1816;  // 0x718 - Diagnostics RX
+    constexpr uint16_t NLG5_DIAG_TX     = 1818;  // 0x71A - Diagnostics TX
+}
+
+//-----------------------------------------------------------------------------
+// VEHICLE STATES
+//-----------------------------------------------------------------------------
+enum class VehicleState : uint8_t {
+    SLEEP,      // Deep sleep mode
+    INIT,       // Initializing systems
+    READY,      // Ready to drive/charge
+    DRIVE,      // Driving mode
+    CHARGING    // Charging mode
 };
 
-// Gear States
-enum class GearState {
+enum class GearState : uint8_t {
     NEUTRAL,
     DRIVE,
     REVERSE
 };
 
-// Gear Ratios (Changed LOW to REDUCED)
-enum class GearRatio {
-    NORMAL,
-    REDUCED
-};
+//-----------------------------------------------------------------------------
+// TIMING CONSTANTS (milliseconds)
+//-----------------------------------------------------------------------------
+namespace Timing {
+    constexpr uint32_t BUTTON_DEBOUNCE          = 50;
+    constexpr uint32_t PRECHARGE_TIMEOUT        = 5000;   // 5 seconds
+    constexpr uint32_t PRECHARGE_CHECK_INTERVAL = 100;    // Check every 100ms
+    constexpr uint32_t SLEEP_TIMEOUT            = 5000;   // 5 seconds after STOP
+    constexpr uint32_t CAN_FAST_CYCLE           = 10;     // DMC control
+    constexpr uint32_t CAN_SLOW_CYCLE           = 100;    // Status updates
+    constexpr uint32_t DISPLAY_UPDATE           = 50;     // 20 Hz refresh
+}
 
-// Drive Modes (Changed DrivingMode to DriveMode)
-enum class DriveMode {
-    LEGACY,
-    REGEN,
-    OPD
-};
+//-----------------------------------------------------------------------------
+// BATTERY PARAMETERS (104S LiPo Configuration)
+//-----------------------------------------------------------------------------
+namespace Battery {
+    // Cell Configuration
+    constexpr uint8_t  NUM_CELLS            = 104;  // 104S LiPo pack
+    constexpr uint8_t  NUM_TEMP_SENSORS     = 16;   // 16 temperature modules
+
+    // Cell Voltage Limits (LiPo Chemistry)
+    constexpr float    CELL_MIN_V           = 3.0f;   // Absolute minimum per cell
+    constexpr float    CELL_MAX_V           = 4.2f;   // Absolute maximum per cell
+    constexpr float    CELL_NOM_V           = 3.7f;   // Nominal voltage per cell
+    constexpr float    CELL_STORAGE_V       = 3.8f;   // Storage voltage per cell
+
+    // Pack Voltage Limits (104S)
+    constexpr uint16_t MIN_VOLTAGE          = 312;    // 3.0V * 104S
+    constexpr uint16_t MAX_VOLTAGE          = 437;    // 4.2V * 104S
+    constexpr uint16_t NOM_VOLTAGE          = 385;    // 3.7V * 104S
+    constexpr uint16_t PRECHARGE_TOLERANCE  = 20;     // ±20V for precharge complete
+
+    // Safety Limits
+    constexpr uint8_t  MIN_SOC              = 10;     // Emergency cutoff at 10%
+    constexpr float    MAX_CELL_DELTA       = 0.05f;  // Max voltage imbalance (V)
+    constexpr uint32_t BMS_TIMEOUT_MS       = 1000;   // BMS message timeout
+}
+
+//-----------------------------------------------------------------------------
+// MOTOR PARAMETERS
+//-----------------------------------------------------------------------------
+namespace Motor {
+    constexpr int16_t MAX_TORQUE_NM      = 850;   // Forward max torque
+    constexpr int16_t MAX_REGEN_NM       = 420;   // Regen max torque
+    constexpr int16_t MAX_REVERSE_NM     = 200;   // Reverse max torque
+    constexpr int16_t MAX_RPM            = 6000;
+    constexpr float   DEADZONE_PERCENT   = 2.0f;  // 2% deadzone around zero
+    
+    // Transmission
+    constexpr float GEAR_RATIO = 3.9f;
+    constexpr float WHEEL_DIAMETER_M = 0.66f;  // 66cm diameter
+    
+    // Torque curves (% of max torque at given RPM)
+    // Speed zones: 0-1000, 1000-2000, 2000-4000, 4000-6000
+    constexpr float TORQUE_CURVE[] = {100.0f, 100.0f, 80.0f, 60.0f};
+    
+    // Regen curves (% of max regen at given RPM)
+    constexpr float REGEN_CURVE[] = {20.0f, 40.0f, 60.0f, 80.0f};
+}
+
+//-----------------------------------------------------------------------------
+// ADC CALIBRATION (ADS1115 16-bit values)
+//-----------------------------------------------------------------------------
+namespace ADC_Cal {
+    constexpr int16_t THROTTLE_MIN = 0;      // 0V = 0%
+    constexpr int16_t THROTTLE_MAX = 26400;  // ~4V = 100%
+    constexpr int16_t REGEN_MIN    = 0;
+    constexpr int16_t REGEN_MAX    = 26400;
+}
+
+//-----------------------------------------------------------------------------
+// CHARGER PARAMETERS (NLG5 - Manual Control, No CP)
+//-----------------------------------------------------------------------------
+namespace Charger {
+    // Charging Profile (LiPo - CC/CV)
+    constexpr float CHARGE_VOLTAGE_MAX      = 4.17f;  // Max per cell (433.68V pack)
+    constexpr float CHARGE_VOLTAGE_BULK     = 4.10f;  // Bulk charge (426.4V pack)
+    constexpr float CHARGE_CURRENT_MAX      = 50.0f;  // Max charge current (A)
+    constexpr float CHARGE_CURRENT_TAPER    = 2.0f;   // CV phase taper current (A)
+    constexpr float CHARGE_POWER_MAX        = 3300.0f; // Max charger power (W)
+
+    // Mains Settings (Manual Mode - No Control Pilot)
+    constexpr float MAINS_CURRENT_MAX       = 16.0f;  // Max mains current (A)
+    constexpr float MAINS_VOLTAGE_MIN       = 200.0f; // Min mains voltage (V)
+
+    // Temperature Limits
+    constexpr float CHARGE_TEMP_MIN         = 0.0f;   // Min charge temp (°C)
+    constexpr float CHARGE_TEMP_MAX         = 45.0f;  // Max charge temp (°C)
+    constexpr float CHARGER_TEMP_MAX        = 80.0f;  // Max charger temp (°C)
+
+    // Safety
+    constexpr uint32_t CHARGER_TIMEOUT_MS   = 2000;   // Charger message timeout
+    constexpr uint32_t CHARGE_TIMEOUT_MS    = 14400000; // 4 hour max charge time
+
+    // NLG5 Control Flags (for NLG5_CTL message)
+    constexpr uint8_t CTL_FLAG_ENABLE       = 0x80;   // Bit 7: C_C_EN
+    constexpr uint8_t CTL_FLAG_CLEAR_ERROR  = 0x40;   // Bit 6: C_C_EL
+    constexpr uint8_t CTL_FLAG_CP_VENT      = 0x20;   // Bit 5: C_CP_V
+    constexpr uint8_t CTL_FLAG_MAINS_REQ    = 0x10;   // Bit 4: C_MR
+}
+
+//-----------------------------------------------------------------------------
+// SAFETY LIMITS
+//-----------------------------------------------------------------------------
+namespace Safety {
+    constexpr float MAX_MOTOR_TEMP      = 140.0f;  // °C
+    constexpr float MAX_INVERTER_TEMP   = 100.0f;  // °C
+    constexpr float MAX_BATTERY_TEMP    = 55.0f;   // °C
+    constexpr float CRITICAL_CELL_VOLTAGE = 3.0f;  // V
+}
+
+//-----------------------------------------------------------------------------
+// FREERTOS CONFIGURATION
+//-----------------------------------------------------------------------------
+namespace FreeRTOS {
+    // Task stack sizes (bytes)
+    constexpr uint32_t STACK_CAN_RX        = 4096;
+    constexpr uint32_t STACK_CAN_TX        = 3072;
+    constexpr uint32_t STACK_VEHICLE_CTRL  = 3072;
+    constexpr uint32_t STACK_STATE_MGR     = 3072;
+    constexpr uint32_t STACK_SAFETY        = 2048;
+    constexpr uint32_t STACK_INPUT         = 3072;
+    constexpr uint32_t STACK_DISPLAY       = 3072;
+    constexpr uint32_t STACK_WIFI          = 4096;
+    constexpr uint32_t STACK_WEBSERVER     = 8192;
+    constexpr uint32_t STACK_MONITOR       = 2048;
+
+    // Task priorities (0-24, higher = more priority)
+    constexpr uint8_t PRIORITY_CAN_RX      = 24;  // Highest - time critical
+    constexpr uint8_t PRIORITY_CAN_TX      = 23;
+    constexpr uint8_t PRIORITY_VEHICLE     = 22;
+    constexpr uint8_t PRIORITY_STATE       = 21;
+    constexpr uint8_t PRIORITY_SAFETY      = 20;
+    constexpr uint8_t PRIORITY_INPUT       = 10;
+    constexpr uint8_t PRIORITY_DISPLAY     = 5;
+    constexpr uint8_t PRIORITY_WIFI        = 4;
+    constexpr uint8_t PRIORITY_WEBSERVER   = 3;
+    constexpr uint8_t PRIORITY_MONITOR     = 2;
+
+    // Core assignment (ESP32 has 2 cores: 0 and 1)
+    constexpr uint8_t CORE_PROTOCOL        = 0;  // CAN, Vehicle, State, Safety
+    constexpr uint8_t CORE_APPLICATION     = 1;  // Input, Display, WiFi, Web
+
+    // Queue sizes
+    constexpr uint8_t QUEUE_CAN_RX         = 10;  // Incoming CAN messages
+    constexpr uint8_t QUEUE_INPUT          = 5;   // Input events
+    constexpr uint8_t QUEUE_EVENTS         = 10;  // State machine events
+}
+
+//-----------------------------------------------------------------------------
+// WIFI CONFIGURATION
+//-----------------------------------------------------------------------------
+namespace WiFi_Config {
+    // Access Point (Field Use)
+    constexpr const char* AP_SSID          = "E-GoCart-VCU";
+    constexpr const char* AP_PASSWORD      = "egocart123";  // Min 8 chars
+    constexpr uint8_t     AP_CHANNEL       = 6;
+    constexpr uint8_t     AP_MAX_CLIENTS   = 4;
+
+    // Station Mode (Workshop) - stored in LittleFS, these are defaults
+    constexpr const char* STA_SSID         = "OBR-INTERN";
+    constexpr const char* STA_PASSWORD     = "";
+
+    // Network Settings
+    constexpr const char* AP_IP            = "192.168.4.1";
+    constexpr const char* AP_GATEWAY       = "192.168.4.1";
+    constexpr const char* AP_SUBNET        = "255.255.255.0";
+
+    // Webserver
+    constexpr uint16_t    HTTP_PORT        = 80;
+    constexpr uint32_t    WEBSOCKET_UPDATE = 50;  // ms between updates
+
+    // OTA Update
+    constexpr const char* OTA_HOSTNAME     = "egocart-vcu";
+    constexpr const char* OTA_PASSWORD     = "egocart123";
+    constexpr uint16_t    OTA_PORT         = 3232;
+}
+
+//-----------------------------------------------------------------------------
+// RUNTIME CONFIGURATION (Web-Configurable, stored in LittleFS)
+//-----------------------------------------------------------------------------
+namespace RuntimeConfig {
+    // CAN Timing (configurable 10-50ms)
+    constexpr uint32_t CAN_FAST_MIN        = 10;
+    constexpr uint32_t CAN_FAST_MAX        = 50;
+    constexpr uint32_t CAN_FAST_DEFAULT    = 10;   // Default to 10ms
+
+    // Motor Limits (configurable via web)
+    constexpr int16_t TORQUE_MAX_DEFAULT   = Motor::MAX_TORQUE_NM;
+    constexpr int16_t REGEN_MAX_DEFAULT    = Motor::MAX_REGEN_NM;
+    constexpr int16_t REVERSE_MAX_DEFAULT  = Motor::MAX_REVERSE_NM;
+}
+
+//-----------------------------------------------------------------------------
+// DEBUG OPTIONS
+//-----------------------------------------------------------------------------
+#define DEBUG_SERIAL        1  // Enable Serial debug output
+#define DEBUG_CAN_MESSAGES  0  // Log all CAN messages
+#define DEBUG_STATE_MACHINE 1  // Log state transitions
+#define DEBUG_FREERTOS      0  // Log FreeRTOS task info
+#define DEBUG_WIFI          1  // Log WiFi events
+#define DEBUG_WEBSERVER     0  // Log web requests
+
+// Debug Mode (prevents sleep, keeps WiFi always on)
+#define DEBUG_MODE          1  // 1 = Debug mode, 0 = Production mode
+
+// Hardware-less Test Mode (bypass hardware init, simulate telemetry)
+// Set to 1 to test webserver without physical hardware connected
+#define HARDWARE_TEST_MODE  1  // 1 = Simulated data, 0 = Real hardware
+
+#if DEBUG_SERIAL
+    #define DEBUG_PRINT(x)   Serial.print(x)
+    #define DEBUG_PRINTLN(x) Serial.println(x)
+    #define DEBUG_PRINTF(...)  Serial.printf(__VA_ARGS__)
+#else
+    #define DEBUG_PRINT(x)
+    #define DEBUG_PRINTLN(x)
+    #define DEBUG_PRINTF(...)
+#endif

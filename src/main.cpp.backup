@@ -1,0 +1,325 @@
+#include <Arduino.h>
+#include "config.h"
+#include "input_manager.h"
+#include "state_manager.h"
+#include "vehicle_control.h"
+#include "can_manager.h"
+#include "display_manager.h"
+
+//=============================================================================
+// GLOBAL OBJECTS
+//=============================================================================
+InputManager inputManager;
+StateManager stateManager;
+VehicleControl vehicleControl;
+CANManager canManager;
+DisplayManager displayManager;
+
+//=============================================================================
+// TIMING VARIABLES
+//=============================================================================
+unsigned long lastControlUpdate = 0;
+unsigned long lastCANUpdate = 0;
+unsigned long lastDisplayUpdate = 0;
+unsigned long stopButtonHoldStart = 0;
+bool stopButtonHeld = false;
+
+//=============================================================================
+// FUNCTION PROTOTYPES
+//=============================================================================
+void handleInputs();
+void handleStopButtonTimeout();
+void updateVehicleControl();
+void updateCAN();
+void updateDisplay();
+void checkSafetyConditions();
+
+//=============================================================================
+// SETUP
+//=============================================================================
+void setup() {
+    // Initialize serial for debugging
+    Serial.begin(115200);
+    delay(500);
+    
+    DEBUG_PRINTLN("\n\n========================================");
+    DEBUG_PRINTLN("  VCU Simplified - Starting Up");
+    DEBUG_PRINTLN("========================================\n");
+    
+    // Initialize all managers
+    DEBUG_PRINTLN("Initializing Input Manager...");
+    if (!inputManager.begin()) {
+        DEBUG_PRINTLN("FATAL: Input Manager initialization failed!");
+        while(1) { delay(1000); }
+    }
+    
+    DEBUG_PRINTLN("Initializing State Manager...");
+    stateManager.begin();
+    
+    DEBUG_PRINTLN("Initializing Vehicle Control...");
+    vehicleControl.begin();
+    
+    DEBUG_PRINTLN("Initializing CAN Manager...");
+    if (!canManager.begin()) {
+        DEBUG_PRINTLN("FATAL: CAN Manager initialization failed!");
+        while(1) { delay(1000); }
+    }
+    
+    DEBUG_PRINTLN("Initializing Display Manager...");
+    if (!displayManager.begin()) {
+        DEBUG_PRINTLN("WARNING: Display Manager initialization failed!");
+        // Continue anyway - display is not critical
+    }
+    
+    DEBUG_PRINTLN("\n========================================");
+    DEBUG_PRINTLN("  VCU Initialized Successfully!");
+    DEBUG_PRINTLN("  Ready for operation");
+    DEBUG_PRINTLN("========================================\n");
+    
+    // Check wakeup reason
+    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+        DEBUG_PRINTLN("Woke up from START button");
+        stateManager.handleStartButton();
+    } else {
+        DEBUG_PRINTLN("Power-on reset");
+    }
+}
+
+//=============================================================================
+// MAIN LOOP
+//=============================================================================
+void loop() {
+    unsigned long currentTime = millis();
+    
+    // Update inputs (always run at max speed)
+    inputManager.update();
+    handleInputs();
+    
+    // Update state manager (always run)
+    stateManager.update();
+    
+    // Update vehicle control (10ms cycle)
+    if (currentTime - lastControlUpdate >= Timing::CAN_FAST_CYCLE) {
+        lastControlUpdate = currentTime;
+        updateVehicleControl();
+    }
+    
+    // Update CAN communication
+    updateCAN();
+    
+    // Update display (50ms cycle)
+    if (currentTime - lastDisplayUpdate >= Timing::DISPLAY_UPDATE) {
+        lastDisplayUpdate = currentTime;
+        updateDisplay();
+    }
+    
+    // Check safety conditions
+    checkSafetyConditions();
+    
+    // Handle stop button timeout
+    handleStopButtonTimeout();
+    
+    // Small delay to prevent overwhelming the system
+    delay(1);
+}
+
+//=============================================================================
+// INPUT HANDLING
+//=============================================================================
+void handleInputs() {
+    // Handle START button
+    if (inputManager.isStartPressed()) {
+        static bool startButtonProcessed = false;
+        if (!startButtonProcessed) {
+            stateManager.handleStartButton();
+            startButtonProcessed = true;
+        }
+    } else {
+        static bool startButtonProcessed = false;
+        startButtonProcessed = false;  // Reset when released
+    }
+    
+    // Handle STOP button (with hold-to-sleep)
+    if (inputManager.isStopPressed()) {
+        if (!stopButtonHeld) {
+            stopButtonHoldStart = millis();
+            stopButtonHeld = true;
+            DEBUG_PRINTLN("Stop button pressed");
+        }
+    } else {
+        stopButtonHeld = false;
+    }
+    
+    // Handle RESET button
+    if (inputManager.isResetPressed()) {
+        DEBUG_PRINTLN("Reset button pressed - Restarting ESP32...");
+        delay(100);
+        ESP.restart();
+    }
+    
+    // Handle Interlock
+    static bool ilWasClosed = true;
+    bool ilClosed = inputManager.isILClosed();
+    
+    if (ilWasClosed && !ilClosed) {
+        DEBUG_PRINTLN("Interlock opened!");
+        stateManager.handleILOpen();
+    }
+    ilWasClosed = ilClosed;
+    
+    // Handle charger connection
+    static bool chargerWasConnected = false;
+    bool chargerConnected = inputManager.isChargerConnected();
+    
+    if (!chargerWasConnected && chargerConnected) {
+        DEBUG_PRINTLN("Charger connected");
+        stateManager.handleChargerConnected();
+    } else if (chargerWasConnected && !chargerConnected) {
+        DEBUG_PRINTLN("Charger disconnected");
+        stateManager.handleChargerDisconnected();
+    }
+    chargerWasConnected = chargerConnected;
+    
+    // Handle direction toggle
+    if (inputManager.isDirectionTogglePressed()) {
+        vehicleControl.handleDirectionToggle();
+    }
+}
+
+void handleStopButtonTimeout() {
+    if (!stopButtonHeld) {
+        return;
+    }
+    
+    unsigned long holdTime = millis() - stopButtonHoldStart;
+    
+    // If held for SLEEP_TIMEOUT, enter deep sleep
+    if (holdTime >= Timing::SLEEP_TIMEOUT) {
+        DEBUG_PRINTLN("Stop button held - Entering sleep mode...");
+        stateManager.handleStopButton();
+        delay(100);
+        
+        // Enter deep sleep
+        esp_deep_sleep_start();
+    }
+}
+
+//=============================================================================
+// VEHICLE CONTROL UPDATE
+//=============================================================================
+void updateVehicleControl() {
+    // Pass inputs to vehicle control
+    vehicleControl.setThrottle(inputManager.getThrottlePercent());
+    vehicleControl.setRegen(inputManager.getRegenPercent());
+    vehicleControl.setBrakePressed(inputManager.isBrakePressed());
+    vehicleControl.setMotorSpeed(canManager.getDMCData().speedActual);
+    vehicleControl.setSystemReady(stateManager.isSystemReady());
+    
+    // Update vehicle control logic
+    vehicleControl.update();
+    
+    // Get torque demand
+    int16_t torqueDemand = vehicleControl.getTorqueDemand();
+    
+    // Send to DMC (only if in DRIVE state)
+    if (stateManager.isDriving()) {
+        bool enableDMC = (torqueDemand != 0);
+        canManager.sendDMCControl(torqueDemand, enableDMC);
+    } else {
+        // Send zero torque if not driving
+        canManager.sendDMCControl(0, false);
+    }
+}
+
+//=============================================================================
+// CAN UPDATE
+//=============================================================================
+void updateCAN() {
+    // Update CAN manager (processes incoming messages and sends periodic messages)
+    canManager.update();
+    
+    // Handle charging state
+    if (stateManager.isCharging()) {
+        // Send NLG control message
+        uint8_t chargerState = Charger::STATE_CHARGING;
+        canManager.sendNLGControl(chargerState);
+    }
+}
+
+//=============================================================================
+// DISPLAY UPDATE
+//=============================================================================
+void updateDisplay() {
+    const BMSData& bmsData = canManager.getBMSData();
+    const DMCData& dmcData = canManager.getDMCData();
+    
+    // Calculate speed from motor RPM
+    float motorSpeed = abs(dmcData.speedActual);
+    float wheelSpeed = motorSpeed / Motor::GEAR_RATIO;  // RPM at wheels
+    float speedKmh = (wheelSpeed * Motor::WHEEL_DIAMETER_M * 3.14159f * 60.0f) / 1000.0f;
+    
+    // Calculate power (kW)
+    float powerKw = (dmcData.dcVoltage * dmcData.dcCurrent) / 1000.0f;
+    
+    // Update display values
+    displayManager.setSpeed((int)speedKmh);
+    displayManager.setPower((int)powerKw);
+    displayManager.setSOC(bmsData.soc);
+    displayManager.setVoltage(bmsData.voltage);
+    displayManager.setGear(vehicleControl.getCurrentGear());
+    displayManager.setTempMotor(dmcData.tempMotor);
+    displayManager.setTempInverter(dmcData.tempInverter);
+    displayManager.setTempBattery(bmsData.temperature);
+    displayManager.setMinCellVoltage(bmsData.minCellVoltage);
+    
+    // Update display
+    displayManager.update();
+}
+
+//=============================================================================
+// SAFETY CHECKS
+//=============================================================================
+void checkSafetyConditions() {
+    const BMSData& bmsData = canManager.getBMSData();
+    const DMCData& dmcData = canManager.getDMCData();
+    
+    // Check motor temperature
+    if (dmcData.tempMotor > Safety::MAX_MOTOR_TEMP) {
+        DEBUG_PRINTLN("WARNING: Motor overtemperature!");
+        displayManager.showWarning("MOTOR OVERHEAT");
+        // Optionally reduce torque or stop
+    }
+    
+    // Check inverter temperature
+    if (dmcData.tempInverter > Safety::MAX_INVERTER_TEMP) {
+        DEBUG_PRINTLN("WARNING: Inverter overtemperature!");
+        displayManager.showWarning("INVERTER OVERHEAT");
+    }
+    
+    // Check battery voltage
+    if (bmsData.voltage < Battery::MIN_VOLTAGE) {
+        DEBUG_PRINTLN("WARNING: Battery undervoltage!");
+        displayManager.showWarning("LOW VOLTAGE");
+    }
+    
+    // Check SOC
+    if (bmsData.soc < Battery::MIN_SOC) {
+        DEBUG_PRINTLN("WARNING: Low battery!");
+        displayManager.showWarning("LOW BATTERY");
+    }
+    
+    // Check cell voltage
+    if (bmsData.minCellVoltage < Safety::CRITICAL_CELL_VOLTAGE) {
+        DEBUG_PRINTLN("CRITICAL: Cell voltage too low!");
+        displayManager.showWarning("CELL CRITICAL");
+        vehicleControl.emergencyStop();
+    }
+    
+    // Check if BMS is still alive
+    if (!canManager.isBMSAlive() && stateManager.isDriving()) {
+        DEBUG_PRINTLN("ERROR: BMS communication lost!");
+        displayManager.showWarning("BMS OFFLINE");
+        vehicleControl.emergencyStop();
+    }
+}

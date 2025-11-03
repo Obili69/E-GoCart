@@ -109,8 +109,21 @@ struct VehicleTelemetry {
     // Inputs
     float throttlePercent;
     float regenPercent;
+    int16_t throttleRawADC;
+    int16_t regenRawADC;
     bool brakePressed;
     bool ilClosed;
+
+    // Safety Allowances (NEW)
+    bool chargeAllowed;         // Charge allowance from BMS (via MCP A0)
+    bool dischargeAllowed;      // Discharge allowance from BMS (via MCP A1)
+    bool regenEnabled;          // Regen enabled state (disabled if charge not allowed)
+
+    // Contactor States (NEW)
+    uint8_t contactorState;     // ContactorState enum value
+    bool chargeArmed;           // Charge path armed
+    bool dischargeArmed;        // Discharge path armed
+    bool contactorError;        // Contactor error flag
 
     // CAN status
     bool bmsAlive;
@@ -163,6 +176,12 @@ struct RuntimeConfigData {
     uint8_t chargingPreset;           // 0=Custom, 1=Storage, 2=Fast, 3=Gentle, 4=Eco
     bool autoStopAtStorage;           // Stop automatically when reaching storage voltage
     bool balancingEnabled;            // Enable cell balancing during charge
+
+    // Pedal Calibration
+    int16_t throttleMinADC;           // Throttle pot minimum ADC value
+    int16_t throttleMaxADC;           // Throttle pot maximum ADC value
+    int16_t regenMinADC;              // Regen pot minimum ADC value
+    int16_t regenMaxADC;              // Regen pot maximum ADC value
 
     // Checksum for validation
     uint32_t checksum;
@@ -398,6 +417,12 @@ inline RuntimeConfigData getDefaultRuntimeConfig() {
     config.chargingPreset = 0;                  // Custom (no preset)
     config.autoStopAtStorage = true;            // Auto-stop at storage voltage
     config.balancingEnabled = true;             // Enable cell balancing
+
+    // Pedal Calibration
+    config.throttleMinADC = ADC_Cal::THROTTLE_MIN;
+    config.throttleMaxADC = ADC_Cal::THROTTLE_MAX;
+    config.regenMinADC = ADC_Cal::REGEN_MIN;
+    config.regenMaxADC = ADC_Cal::REGEN_MAX;
 
     // Calculate checksum
     config.checksum = calculateConfigChecksum(config);

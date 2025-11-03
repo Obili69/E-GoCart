@@ -78,9 +78,9 @@ function handleTelemetryUpdate(data) {
     updateElement('speed', Math.round(data.speed));
     updateElement('power', data.power.toFixed(1));
     updateElement('torqueDemand', data.torqueDemand);
-    updateElement('soc', data.soc);
-    updateElement('voltage', data.voltage);
-    updateElement('current', data.current.toFixed(1));
+    updateElement('soc', data.soc.toFixed(2));  // Scale: soc * 10
+    updateElement('voltage', (data.voltage / 10).toFixed(2));  // Scale: voltage / 10, show 2 decimals
+    updateElement('current', (data.current/10).toFixed(2));
     updateElement('minCell', data.minCell.toFixed(2));
     updateElement('tempMotor', Math.round(data.tempMotor));
     updateElement('tempInverter', Math.round(data.tempInverter));
@@ -101,6 +101,9 @@ function handleTelemetryUpdate(data) {
 
     // Update charts
     updateCharts(data);
+
+    // Update calibration display (if on calibration tab)
+    updateCalibrationDisplay(data);
 
     // Log CAN activity
     logCANActivity(data);
@@ -280,7 +283,7 @@ function logCANActivity(data) {
 
     // Log BMS message
     if (data.bmsAlive) {
-        addCANLog(timestamp, 'BMS', `SOC:${data.soc}% V:${data.voltage}V I:${data.current.toFixed(1)}A`);
+        addCANLog(timestamp, 'BMS', `SOC:${(data.soc * 10).toFixed(0)}% V:${(data.voltage / 10).toFixed(2)}V I:${data.current.toFixed(1)}A`);
     }
 
     // Log DMC message
@@ -1024,10 +1027,10 @@ async function updateChargingStatus() {
         
         const stateNames = ['Idle', 'Precheck', 'Starting', 'Bulk Charge', 'Absorption', 'Balancing', 'Complete', 'Error', 'Disabled'];
         document.getElementById('chargerState').textContent = stateNames[status.chargerState] || 'Unknown';
-        document.getElementById('chargeVoltage').textContent = (status.actualVoltage / 10).toFixed(1);
+        document.getElementById('chargeVoltage').textContent = (status.actualVoltage / 10).toFixed(2);  // 2 decimals
         document.getElementById('chargeCurrent').textContent = (status.actualCurrent / 10).toFixed(1);
         document.getElementById('chargePower').textContent = Math.round(status.chargePower);
-        document.getElementById('chargeSoc').textContent = status.socPercent;
+        document.getElementById('chargeSoc').textContent = (status.socPercent * 10).toFixed(0);  // Scale SOC
     } catch (error) {
         console.error('Failed to update charging status:', error);
     }
@@ -1039,10 +1042,302 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('charging').classList.contains('active')) {
         loadChargingConfig();
     }
-    
+
     // Update charging status every 2 seconds
     setInterval(updateChargingStatus, 2000);
-    
+
     // Update charging limits every 5 seconds
     setInterval(updateChargingLimits, 5000);
+
+    // Load calibration config if on calibration tab
+    loadCalibrationConfig();
 });
+
+//=============================================================================
+// CALIBRATION FUNCTIONS
+//=============================================================================
+
+// Calibration wizard state
+let calibrationState = {
+    throttleMin: null,
+    throttleMax: null,
+    regenMin: null,
+    regenMax: null,
+    currentStep: 1
+};
+
+// Update calibration display with live telemetry
+function updateCalibrationDisplay(data) {
+    if (!data.throttleRawADC && data.throttleRawADC !== 0) return;
+
+    // Update raw ADC values
+    updateElement('calibThrottleRaw', data.throttleRawADC);
+    updateElement('calibRegenRaw', data.regenRawADC);
+
+    // Update percentages
+    updateElement('calibThrottlePercent', data.throttle.toFixed(1) + '%');
+    updateElement('calibRegenPercent', data.regen.toFixed(1) + '%');
+
+    // Update progress bars
+    const throttleBar = document.getElementById('calibThrottleBar');
+    const regenBar = document.getElementById('calibRegenBar');
+    if (throttleBar) throttleBar.style.width = data.throttle + '%';
+    if (regenBar) regenBar.style.width = data.regen + '%';
+}
+
+// Load current calibration config
+async function loadCalibrationConfig() {
+    try {
+        const response = await fetch('/api/calibration');
+        const data = await response.json();
+
+        // Update manual calibration inputs
+        document.getElementById('manualThrottleMin').value = data.throttleMin;
+        document.getElementById('manualThrottleMax').value = data.throttleMax;
+        document.getElementById('manualRegenMin').value = data.regenMin;
+        document.getElementById('manualRegenMax').value = data.regenMax;
+
+    } catch (error) {
+        console.error('Failed to load calibration config:', error);
+    }
+}
+
+// Wizard functions
+function captureThrottleMin() {
+    if (!telemetryData.throttleRawADC && telemetryData.throttleRawADC !== 0) {
+        showCalibrationStatus('No telemetry data available', 'error');
+        return;
+    }
+
+    calibrationState.throttleMin = telemetryData.throttleRawADC;
+    document.getElementById('throttleMinValue').textContent = `✓ Captured: ${calibrationState.throttleMin}`;
+
+    // Move to next step
+    setTimeout(() => {
+        document.getElementById('wizardStep1').style.display = 'none';
+        document.getElementById('wizardStep2').style.display = 'block';
+        calibrationState.currentStep = 2;
+    }, 500);
+}
+
+function captureThrottleMax() {
+    if (!telemetryData.throttleRawADC && telemetryData.throttleRawADC !== 0) {
+        showCalibrationStatus('No telemetry data available', 'error');
+        return;
+    }
+
+    calibrationState.throttleMax = telemetryData.throttleRawADC;
+
+    // Validate max > min
+    if (calibrationState.throttleMax <= calibrationState.throttleMin) {
+        showCalibrationStatus('Error: Max value must be greater than min value', 'error');
+        return;
+    }
+
+    document.getElementById('throttleMaxValue').textContent = `✓ Captured: ${calibrationState.throttleMax}`;
+
+    // Move to next step
+    setTimeout(() => {
+        document.getElementById('wizardStep2').style.display = 'none';
+        document.getElementById('wizardStep3').style.display = 'block';
+        calibrationState.currentStep = 3;
+    }, 500);
+}
+
+function captureRegenMin() {
+    if (!telemetryData.regenRawADC && telemetryData.regenRawADC !== 0) {
+        showCalibrationStatus('No telemetry data available', 'error');
+        return;
+    }
+
+    calibrationState.regenMin = telemetryData.regenRawADC;
+    document.getElementById('regenMinValue').textContent = `✓ Captured: ${calibrationState.regenMin}`;
+
+    // Move to next step
+    setTimeout(() => {
+        document.getElementById('wizardStep3').style.display = 'none';
+        document.getElementById('wizardStep4').style.display = 'block';
+        calibrationState.currentStep = 4;
+    }, 500);
+}
+
+function captureRegenMax() {
+    if (!telemetryData.regenRawADC && telemetryData.regenRawADC !== 0) {
+        showCalibrationStatus('No telemetry data available', 'error');
+        return;
+    }
+
+    calibrationState.regenMax = telemetryData.regenRawADC;
+
+    // Validate max > min
+    if (calibrationState.regenMax <= calibrationState.regenMin) {
+        showCalibrationStatus('Error: Max value must be greater than min value', 'error');
+        return;
+    }
+
+    document.getElementById('regenMaxValue').textContent = `✓ Captured: ${calibrationState.regenMax}`;
+
+    // Move to summary step
+    setTimeout(() => {
+        document.getElementById('wizardStep4').style.display = 'none';
+        document.getElementById('wizardStep5').style.display = 'block';
+        calibrationState.currentStep = 5;
+
+        // Update summary
+        document.getElementById('summaryThrottleMin').textContent = calibrationState.throttleMin;
+        document.getElementById('summaryThrottleMax').textContent = calibrationState.throttleMax;
+        document.getElementById('summaryRegenMin').textContent = calibrationState.regenMin;
+        document.getElementById('summaryRegenMax').textContent = calibrationState.regenMax;
+    }, 500);
+}
+
+// Save calibration from wizard
+async function saveCalibration() {
+    const params = new URLSearchParams({
+        throttleMin: calibrationState.throttleMin,
+        throttleMax: calibrationState.throttleMax,
+        regenMin: calibrationState.regenMin,
+        regenMax: calibrationState.regenMax
+    });
+
+    try {
+        const response = await fetch(`/api/calibration?${params}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            showCalibrationStatus('✓ Calibration saved successfully!', 'success');
+
+            // Also update manual inputs
+            document.getElementById('manualThrottleMin').value = calibrationState.throttleMin;
+            document.getElementById('manualThrottleMax').value = calibrationState.throttleMax;
+            document.getElementById('manualRegenMin').value = calibrationState.regenMin;
+            document.getElementById('manualRegenMax').value = calibrationState.regenMax;
+        } else {
+            const result = await response.json();
+            showCalibrationStatus('Error: ' + result.message, 'error');
+        }
+    } catch (error) {
+        showCalibrationStatus('Failed to save calibration: ' + error.message, 'error');
+    }
+}
+
+// Save manual calibration
+async function saveManualCalibration() {
+    const throttleMin = parseInt(document.getElementById('manualThrottleMin').value);
+    const throttleMax = parseInt(document.getElementById('manualThrottleMax').value);
+    const regenMin = parseInt(document.getElementById('manualRegenMin').value);
+    const regenMax = parseInt(document.getElementById('manualRegenMax').value);
+
+    // Validate
+    if (isNaN(throttleMin) || isNaN(throttleMax) || isNaN(regenMin) || isNaN(regenMax)) {
+        showCalibrationStatus('Error: All fields must be filled', 'error');
+        return;
+    }
+
+    if (throttleMax <= throttleMin || regenMax <= regenMin) {
+        showCalibrationStatus('Error: Max values must be greater than min values', 'error');
+        return;
+    }
+
+    const params = new URLSearchParams({
+        throttleMin: throttleMin,
+        throttleMax: throttleMax,
+        regenMin: regenMin,
+        regenMax: regenMax
+    });
+
+    try {
+        const response = await fetch(`/api/calibration?${params}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            showCalibrationStatus('✓ Manual calibration saved successfully!', 'success');
+        } else {
+            const result = await response.json();
+            showCalibrationStatus('Error: ' + result.message, 'error');
+        }
+    } catch (error) {
+        showCalibrationStatus('Failed to save calibration: ' + error.message, 'error');
+    }
+}
+
+// Reset to defaults
+async function resetToDefaults() {
+    if (!confirm('Reset calibration to default values (0 to 26400)?')) {
+        return;
+    }
+
+    const params = new URLSearchParams({
+        throttleMin: 0,
+        throttleMax: 26400,
+        regenMin: 0,
+        regenMax: 26400
+    });
+
+    try {
+        const response = await fetch(`/api/calibration?${params}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            showCalibrationStatus('✓ Reset to defaults successfully!', 'success');
+
+            // Update manual inputs
+            document.getElementById('manualThrottleMin').value = 0;
+            document.getElementById('manualThrottleMax').value = 26400;
+            document.getElementById('manualRegenMin').value = 0;
+            document.getElementById('manualRegenMax').value = 26400;
+        } else {
+            const result = await response.json();
+            showCalibrationStatus('Error: ' + result.message, 'error');
+        }
+    } catch (error) {
+        showCalibrationStatus('Failed to reset: ' + error.message, 'error');
+    }
+}
+
+// Reset wizard to beginning
+function resetWizard() {
+    calibrationState = {
+        throttleMin: null,
+        throttleMax: null,
+        regenMin: null,
+        regenMax: null,
+        currentStep: 1
+    };
+
+    // Hide all steps
+    for (let i = 2; i <= 5; i++) {
+        document.getElementById(`wizardStep${i}`).style.display = 'none';
+    }
+
+    // Show step 1
+    document.getElementById('wizardStep1').style.display = 'block';
+
+    // Clear captured values
+    document.getElementById('throttleMinValue').textContent = '';
+    document.getElementById('throttleMaxValue').textContent = '';
+    document.getElementById('regenMinValue').textContent = '';
+    document.getElementById('regenMaxValue').textContent = '';
+
+    showCalibrationStatus('Wizard reset. Start over from Step 1.', 'info');
+}
+
+// Show calibration status message
+function showCalibrationStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('calibrationStatus');
+
+    let alertClass = 'alert-info';
+    if (type === 'success') alertClass = 'alert-success';
+    if (type === 'error') alertClass = 'alert-danger';
+    if (type === 'warning') alertClass = 'alert-warning';
+
+    statusDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+
+    // Clear after 5 seconds
+    setTimeout(() => {
+        statusDiv.innerHTML = '';
+    }, 5000);
+}

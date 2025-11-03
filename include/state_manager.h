@@ -3,6 +3,10 @@
 #include <esp_sleep.h>
 #include "config.h"
 
+// Forward declarations
+class BMSManager;
+class ContactorManager;
+
 //=============================================================================
 // STATE MANAGER
 // Handles: Vehicle state machine, sleep/wake, system initialization
@@ -14,8 +18,10 @@ public:
     
     /**
      * @brief Initialize state manager
+     * @param bmsMgr Pointer to BMSManager for power control
+     * @param contactorMgr Pointer to ContactorManager for contactor control
      */
-    void begin();
+    void begin(BMSManager* bmsMgr = nullptr, ContactorManager* contactorMgr = nullptr);
     
     /**
      * @brief Update state machine (call in loop)
@@ -34,30 +40,45 @@ public:
     // -------------------------------------------------------------------------
     // STATE TRANSITIONS (Called by external events)
     // -------------------------------------------------------------------------
-    void handleStartButton();     // Wake from sleep / Enter READY
-    void handleStopButton();      // Enter sleep after timeout
-    void handleILOpen();          // Interlock opened → Emergency shutdown
-    void handleChargerConnected(); // Enter CHARGING mode
-    void handleChargerDisconnected();
+    void handleWakeup(bool fromCharger);          // Handle system wake-up (button or charger)
+    void handleChargerPinChange(bool connected);   // Charger pin HIGH/LOW
+    void handleStopRequest();                      // Stop request from DRIVE (neutral + button)
+    void handleEmergencyShutdown();                // Emergency shutdown (interlock open)
     
     // -------------------------------------------------------------------------
     // SYSTEM STATUS
     // -------------------------------------------------------------------------
     bool isBatteryArmed() const { return batteryArmed; }
-    bool isPrechargeComplete() const { return prechargeComplete; }
     bool isSystemReady() const { return systemReady; }
-    
+
+    // -------------------------------------------------------------------------
+    // COOLING CONTROL
+    // -------------------------------------------------------------------------
+    /**
+     * @brief Update cooling pump based on motor/inverter temperatures
+     * @param motorTemp Motor temperature in °C
+     * @param inverterTemp Inverter temperature in °C
+     */
+    void updateCoolingPump(float motorTemp, float inverterTemp);
+
 private:
     // Current state
     VehicleState currentState;
     VehicleState previousState;
-    
+
     // System flags
     bool batteryArmed;
-    bool prechargeComplete;
     bool systemReady;
     bool emergencyShutdown;
-    
+    uint8_t requestedMode;
+
+    // Cooling control
+    bool pumpRunning;                  // Current pump state
+
+    // Manager references
+    BMSManager* bmsManager;
+    ContactorManager* contactorManager;
+
     // Timing
     unsigned long stateEntryTime;      // When we entered current state
     unsigned long stopButtonPressTime; // For sleep timeout
@@ -77,9 +98,11 @@ private:
     void shutdownSystems();
     void enterDeepSleep();
     
-    // Battery management
-    void startPrecharge();
-    void checkPrecharge();
-    void armBattery();
+    // Battery management (NEW - uses contactor manager)
+    void armBatteryForCharging();
+    void armBatteryForDischarging();
     void disarmBattery();
+
+    // Helpers
+    bool shouldDisableChargerWakeup();
 };

@@ -423,6 +423,7 @@
             <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
             <button class="tab" onclick="switchTab('charging')">Charging</button>
             <button class="tab" onclick="switchTab('config')">Configuration</button>
+            <button class="tab" onclick="switchTab('calibration')">Calibration</button>
             <button class="tab" onclick="switchTab('can')">CAN Monitor</button>
             <button class="tab" onclick="switchTab('tasks')">Task Monitor</button>
             <button class="tab" onclick="switchTab('system')">System</button>
@@ -724,27 +725,15 @@
                 </div>
 
                 <div class="card">
-                    <h2 class="card-title">Battery Parameters</h2>
-                    <div class="form-group">
-                        <label>Min Voltage</label>
-                        <input type="number" id="minVoltage" min="250" max="350" step="5" value="320">
-                        <small style="color: #a0a0a0;">V (default: 320V)</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Max Voltage</label>
-                        <input type="number" id="maxVoltage" min="350" max="450" step="5" value="420">
-                        <small style="color: #a0a0a0;">V (default: 420V)</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Precharge Tolerance</label>
-                        <input type="number" id="prechargeTolerance" min="5" max="50" step="5" value="20">
-                        <small style="color: #a0a0a0;">V (default: 20V)</small>
-                    </div>
+                    <h2 class="card-title">Battery Safety</h2>
                     <div class="form-group">
                         <label>Critical Cell Voltage</label>
                         <input type="number" id="criticalCellV" min="2.5" max="3.5" step="0.1" value="3.0">
-                        <small style="color: #a0a0a0;">V (default: 3.0V)</small>
+                        <small style="color: #a0a0a0;">V (default: 3.0V) - Emergency shutdown threshold</small>
                     </div>
+                    <small style="color: #808080; display: block; margin-top: 10px;">
+                        Note: Pack voltage limits and precharge settings are hardware constants in firmware
+                    </small>
                 </div>
 
                 <div class="card">
@@ -837,6 +826,121 @@
             <div style="text-align: center; margin-top: 20px;">
                 <button class="btn btn-success" onclick="loadConfig()">Load Current Config</button>
                 <button class="btn" onclick="saveConfig()">Save Configuration</button>
+            </div>
+        </div>
+
+        <!-- Calibration Tab -->
+        <div id="calibration" class="tab-content">
+            <div class="grid">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h2 class="card-title">Throttle & Regen Calibration Wizard</h2>
+                    <div class="alert alert-info">
+                        ℹ️ This wizard will help you calibrate the throttle and regen potentiometers for optimal performance.
+                    </div>
+                </div>
+
+                <!-- Live ADC Display -->
+                <div class="card">
+                    <h2 class="card-title">Live ADC Readings</h2>
+                    <div class="metric">
+                        <span class="metric-label">Throttle Raw ADC</span>
+                        <span class="metric-value" id="calibThrottleRaw">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Throttle Percent</span>
+                        <span class="metric-value" id="calibThrottlePercent">--</span>
+                    </div>
+                    <div style="height: 20px; background: #2a2a2a; border-radius: 5px; overflow: hidden; margin-top: 10px;">
+                        <div id="calibThrottleBar" style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: 0%; transition: width 0.3s;"></div>
+                    </div>
+
+                    <div class="metric" style="margin-top: 20px;">
+                        <span class="metric-label">Regen Raw ADC</span>
+                        <span class="metric-value" id="calibRegenRaw">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Regen Percent</span>
+                        <span class="metric-value" id="calibRegenPercent">--</span>
+                    </div>
+                    <div style="height: 20px; background: #2a2a2a; border-radius: 5px; overflow: hidden; margin-top: 10px;">
+                        <div id="calibRegenBar" style="height: 100%; background: linear-gradient(90deg, #10b981, #059669); width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+
+                <!-- Calibration Wizard -->
+                <div class="card">
+                    <h2 class="card-title">Calibration Wizard</h2>
+
+                    <div id="wizardStep1" class="wizard-step">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">Step 1: Throttle Minimum</h3>
+                        <p style="margin-bottom: 15px;">Release the throttle pedal completely, then click Capture.</p>
+                        <button class="btn" onclick="captureThrottleMin()">Capture Throttle Min</button>
+                        <div id="throttleMinValue" style="margin-top: 10px; color: #10b981;"></div>
+                    </div>
+
+                    <div id="wizardStep2" class="wizard-step" style="display: none;">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">Step 2: Throttle Maximum</h3>
+                        <p style="margin-bottom: 15px;">Press the throttle pedal fully, then click Capture.</p>
+                        <button class="btn" onclick="captureThrottleMax()">Capture Throttle Max</button>
+                        <div id="throttleMaxValue" style="margin-top: 10px; color: #10b981;"></div>
+                    </div>
+
+                    <div id="wizardStep3" class="wizard-step" style="display: none;">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">Step 3: Regen Minimum</h3>
+                        <p style="margin-bottom: 15px;">Release the regen pedal completely, then click Capture.</p>
+                        <button class="btn" onclick="captureRegenMin()">Capture Regen Min</button>
+                        <div id="regenMinValue" style="margin-top: 10px; color: #10b981;"></div>
+                    </div>
+
+                    <div id="wizardStep4" class="wizard-step" style="display: none;">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">Step 4: Regen Maximum</h3>
+                        <p style="margin-bottom: 15px;">Press the regen pedal fully, then click Capture.</p>
+                        <button class="btn" onclick="captureRegenMax()">Capture Regen Max</button>
+                        <div id="regenMaxValue" style="margin-top: 10px; color: #10b981;"></div>
+                    </div>
+
+                    <div id="wizardStep5" class="wizard-step" style="display: none;">
+                        <h3 style="color: #10b981; margin-bottom: 15px;">✓ Calibration Complete!</h3>
+                        <p style="margin-bottom: 15px;">Review your calibration values and save when ready.</p>
+                        <div style="margin: 15px 0;">
+                            <strong>Throttle:</strong> <span id="summaryThrottleMin"></span> → <span id="summaryThrottleMax"></span><br>
+                            <strong>Regen:</strong> <span id="summaryRegenMin"></span> → <span id="summaryRegenMax"></span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-success" onclick="saveCalibration()">Save Calibration</button>
+                            <button class="btn" onclick="resetWizard()">Start Over</button>
+                        </div>
+                    </div>
+
+                    <div id="calibrationStatus" style="margin-top: 15px;"></div>
+                </div>
+
+                <!-- Manual Calibration -->
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h2 class="card-title">Manual Calibration (Advanced)</h2>
+                    <div class="grid">
+                        <div class="metric">
+                            <label class="metric-label">Throttle Min ADC</label>
+                            <input type="number" id="manualThrottleMin" class="input" min="0" max="32767" placeholder="0">
+                        </div>
+                        <div class="metric">
+                            <label class="metric-label">Throttle Max ADC</label>
+                            <input type="number" id="manualThrottleMax" class="input" min="0" max="32767" placeholder="26400">
+                        </div>
+                        <div class="metric">
+                            <label class="metric-label">Regen Min ADC</label>
+                            <input type="number" id="manualRegenMin" class="input" min="0" max="32767" placeholder="0">
+                        </div>
+                        <div class="metric">
+                            <label class="metric-label">Regen Max ADC</label>
+                            <input type="number" id="manualRegenMax" class="input" min="0" max="32767" placeholder="26400">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn" onclick="saveManualCalibration()">Save Manual Calibration</button>
+                        <button class="btn" onclick="resetToDefaults()">Reset to Defaults</button>
+                    </div>
+                </div>
             </div>
         </div>
 

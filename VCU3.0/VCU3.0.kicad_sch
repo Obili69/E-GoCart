@@ -1680,26 +1680,6 @@
 				(justify left)
 			)
 		)
-		(pin "IO1" input
-			(at 157.48 151.13 180)
-			(uuid "163edb82-61b6-47a8-b10f-b52602789c34")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "IO2" input
-			(at 157.48 153.67 180)
-			(uuid "08c61510-deb1-4776-9bb7-94caa5aa5470")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
 		(pin "IO3" input
 			(at 157.48 156.21 180)
 			(uuid "fe74bcf9-8aa1-4161-8195-a0a97642f187")
@@ -2214,16 +2194,6 @@
 				(justify right)
 			)
 		)
-		(pin "IO1" output
-			(at 113.03 153.67 0)
-			(uuid "1203e7f2-d16f-4e49-81fe-470e0f071147")
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
 		(pin "IO3" output
 			(at 113.03 156.21 0)
 			(uuid "a29b0a87-92c0-4bf5-ac99-584e9ed32f84")
@@ -2347,6 +2317,16 @@
 		(pin "P1" input
 			(at 113.03 74.93 0)
 			(uuid "361ba7e6-c595-4e7a-9d1a-fcbe07d88c53")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "IO1" output
+			(at 113.03 153.67 0)
+			(uuid "7d3764f3-7e01-4b0d-807c-a931b29cb631")
 			(effects
 				(font
 					(size 1.27 1.27)

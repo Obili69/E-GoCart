@@ -83,6 +83,10 @@ private:
     void handleStopCharging(AsyncWebServerRequest *request);
     void handleGetChargingLimits(AsyncWebServerRequest *request);
 
+    // Calibration API handlers
+    void handleGetCalibration(AsyncWebServerRequest *request);
+    void handleSetCalibration(AsyncWebServerRequest *request);
+
     // WebSocket handlers
     void onWebSocketEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                          AwsEventType type, void *arg, uint8_t *data, size_t len);
@@ -94,4 +98,9 @@ private:
     String getChargingConfigJSON();
     String getChargingStatusJSON();
     String getChargingLimitsJSON();
+
+    // Config persistence
+    bool saveConfigToLittleFS();
+    bool loadConfigFromLittleFS();
+    String getCalibrationJSON();
 };

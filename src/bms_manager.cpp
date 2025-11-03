@@ -1,29 +1,37 @@
 #include "bms_manager.h"
+#include "can_manager.h"
 
 //=============================================================================
 // BMS COMMAND CODES (for sendCommand function)
 //=============================================================================
 namespace BMSCommand {
-    constexpr uint8_t DISCHARGE_PROTECTION_V = 0x01;
-    constexpr uint8_t OVERCURRENT_PROTECTION = 0x02;
-    constexpr uint8_t BATTERY_CAPACITY       = 0x03;
-    constexpr uint8_t NUM_CELLS              = 0x04;
-    constexpr uint8_t CHARGE_PROTECTION_V    = 0x05;
-    constexpr uint8_t OVERTEMP_PROTECTION    = 0x06;
+    constexpr uint8_t DISCHARGE_PROTECTION_V = 0x01;  // Scale: voltage * 100
+    constexpr uint8_t OVERCURRENT_PROTECTION = 0x02;  // Scale: current * 10
+    constexpr uint8_t BATTERY_CAPACITY       = 0x03;  // Scale: capacity * 10
+    constexpr uint8_t NUM_CELLS              = 0x04;  // Number of series cells
+    constexpr uint8_t CHARGE_PROTECTION_V    = 0x05;  // Scale: voltage * 100
+    constexpr uint8_t OVERTEMP_PROTECTION    = 0x06;  // Scale: temp * 10
     constexpr uint8_t CHANNEL_CONTROL        = 0x07;  // 0x0001=on, 0x0002=off
     constexpr uint8_t BALANCE_CONTROL        = 0x08;  // 0x0002=on, 0x0001=off
     constexpr uint8_t RESET_DISCHARGE_CAP    = 0x09;
     constexpr uint8_t CHARGE_RECOVERY_V      = 0x0A;
     constexpr uint8_t DISCHARGE_RECOVERY_V   = 0x0B;
+    constexpr uint8_t CHANNEL_DEFAULT_STATE  = 0x0C;  // 0x0002=default on
+    constexpr uint8_t HOST_DISPLAY_SWITCH    = 0x0D;  // 0x0002=off, 0x0001=on
     constexpr uint8_t COMMUNICATION_CONNECT  = 0x10;  // 0x0002=connected
-    constexpr uint8_t CAN_OK                 = 0x1C;  // 0x0002=connected
+    constexpr uint8_t BALANCE_START_VOLTAGE  = 0x11;  // Scale: voltage * 100
+    constexpr uint8_t AUTO_RESET_CAPACITY    = 0x15;  // 0x0001=on
+    constexpr uint8_t PRECHARGE_DELAY_TIME   = 0x16;  // Pre-charge delay in seconds
+    constexpr uint8_t LOW_TEMP_PROTECTION    = 0x18;  // Scale: temp * 10
+    constexpr uint8_t CAN_CONNECTED          = 0x1C;  // 0x0002=connected
 }
 
 //=============================================================================
 // CONSTRUCTOR
 //=============================================================================
 
-BMSManager::BMSManager() {
+BMSManager::BMSManager()
+    : canManager(nullptr) {
     dataMutex = xSemaphoreCreateMutex();
     memset(&data, 0, sizeof(data));
     memset(receivedGroups, 0, sizeof(receivedGroups));
@@ -33,18 +41,26 @@ BMSManager::BMSManager() {
 // BEGIN
 //=============================================================================
 
-void BMSManager::begin() {
+void BMSManager::begin(CANManager* canMgr) {
     DEBUG_PRINTLN("BMSManager: Initializing...");
+
+    canManager = canMgr;
 
     // Reset data structure
     memset(&data, 0, sizeof(data));
     data.dataValid = false;
-    data.numCellsConfigured = Battery::NUM_CELLS;
+    data.numCellsConfigured = Battery::NUM_CELLS_TESTING;  // Start with test config
 
     // Request connection with BMS
     requestConnection();
 
-    DEBUG_PRINTLN("BMSManager: Initialized");
+    // Wait for BMS to process connection commands
+    vTaskDelay(pdMS_TO_TICKS(400));
+
+    // Send full configuration
+    sendConfiguration(Battery::NUM_CELLS_TESTING);
+
+    DEBUG_PRINTLN("BMSManager: Initialized (connection + configuration sent)");
 }
 
 //=============================================================================
@@ -52,13 +68,25 @@ void BMSManager::begin() {
 //=============================================================================
 
 void BMSManager::processMessage(uint32_t id, const uint8_t* buf, uint8_t len) {
-    // BMS sends on 0xF5, check if this is a BMS message
-    if (id != CAN_ID::BMS_TX || len < 8) {
+    // BMS sends on 0xF5 (extended 29-bit), mask for comparison
+    uint32_t masked_id = id & 0x1FFFFFFF;
+
+    if (masked_id != CAN_ID::BMS_TX) {
+        return;  // Not a BMS message
+    }
+
+    if (len < 7) {
+        // BMS messages are typically 7-8 bytes (group ID + 6-7 data bytes)
+        DEBUG_PRINTF("BMS: Message too short (%d bytes), group 0x%02X\n", len, buf[0]);
         return;
     }
 
     // Get message group ID from first byte
     uint8_t groupId = buf[0];
+
+#if DEBUG_CAN_MESSAGES
+    DEBUG_PRINTF("BMS: Processing group 0x%02X [%d bytes]\n", groupId, len);
+#endif
 
     // Lock mutex for data update
     if (xSemaphoreTake(dataMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
@@ -305,7 +333,8 @@ void BMSManager::updateMinMaxTemps() {
 void BMSManager::updateSharedData() {
     // Update the global sharedBMSData structure
     BMSData basicData;
-    basicData.soc = data.capacityPercent / 10;  // 0.1% to %
+    basicData.soc = data.capacityPercent;
+    //DEBUG_PRINTLN(basicData.soc);
     basicData.voltage = data.packVoltage;       // Already in 0.1V
     basicData.current = data.packCurrent;       // Already in 0.01A
     basicData.maxDischarge = 100;               // TODO: Get from BMS limits
@@ -380,33 +409,151 @@ void BMSManager::getChargingLimits(float& maxVoltage, float& maxCurrent, float& 
 //=============================================================================
 
 void BMSManager::sendCommand(uint8_t command, uint16_t value) {
-    uint8_t buf[8];
+    if (canManager == nullptr) {
+        DEBUG_PRINTLN("BMSManager: Cannot send command - CAN manager not set");
+        return;
+    }
+
+    // BMS commands are 3 bytes: [command, value_high, value_low]
+    uint8_t buf[3];
     buf[0] = command;
     buf[1] = (value >> 8) & 0xFF;  // High byte
     buf[2] = value & 0xFF;          // Low byte
-    buf[3] = 0;
-    buf[4] = 0;
-    buf[5] = 0;
-    buf[6] = 0;
-    buf[7] = 0;
 
-    // TODO: Send via CAN manager
-    // CANManager should handle sending this on CAN_ID::BMS_RX (0xF4)
+    // Send on CAN_ID::BMS_RX (0xF4) - 3 bytes only
+    bool success = canManager->sendCAN2Message(CAN_ID::BMS_RX, 3, buf);
+
+#if DEBUG_CAN_MESSAGES
+    if (success) {
+        DEBUG_PRINTF("BMS CMD TX: 0x%02X value=0x%04X [%02X %02X %02X]\n",
+                     command, value, buf[0], buf[1], buf[2]);
+    } else {
+        DEBUG_PRINTF("BMS CMD TX FAILED: 0x%02X\n", command);
+    }
+#endif
 }
-
+/*
 void BMSManager::setChannelEnabled(bool enable) {
     uint16_t value = enable ? 0x0001 : 0x0002;
     sendCommand(BMSCommand::CHANNEL_CONTROL, value);
 }
-
+*/
 void BMSManager::setBalancingEnabled(bool enable) {
     uint16_t value = enable ? 0x0002 : 0x0001;
     sendCommand(BMSCommand::BALANCE_CONTROL, value);
 }
 
 void BMSManager::requestConnection() {
+    DEBUG_PRINTLN("BMSManager: Sending connection request...");
     sendCommand(BMSCommand::COMMUNICATION_CONNECT, 0x0002);
-    sendCommand(BMSCommand::CAN_OK, 0x0002);
+    vTaskDelay(pdMS_TO_TICKS(50));  // Small delay between commands
+    sendCommand(BMSCommand::CAN_CONNECTED, 0x0002);
+}
+
+void BMSManager::sendConfiguration(uint8_t numCells) {
+    DEBUG_PRINTLN("BMSManager: Sending BMS configuration...");
+    #if UPLOAD_BMS_CONFIG
+        // Small delay helper between commands
+        auto delayCmd = []() { vTaskDelay(pdMS_TO_TICKS(150)); };
+
+        // 0x01: Max discharge voltage (3.0V per cell) - Scale: voltage * 100
+        uint16_t dischargeVoltage = (uint16_t)(Battery::CELL_MIN_V * 100);
+        sendCommand(BMSCommand::DISCHARGE_PROTECTION_V, dischargeVoltage);
+        delayCmd();
+        DEBUG_PRINTF("  Discharge protection: %d.%02dV\n", dischargeVoltage / 100, dischargeVoltage % 100);
+
+        // 0x02: Overcurrent protection (350A) - Scale: current * 10
+        uint16_t maxCurrent = Battery::MAX_DISCHARGE_CURRENT * 10;
+        sendCommand(BMSCommand::OVERCURRENT_PROTECTION, maxCurrent);
+        delayCmd();
+        DEBUG_PRINTF("  Overcurrent protection: %dA\n", Battery::MAX_DISCHARGE_CURRENT);
+
+        // 0x03: Battery capacity (16Ah) - Scale: capacity * 10
+        uint16_t capacity = Battery::CAPACITY_AH * 10;
+        sendCommand(BMSCommand::BATTERY_CAPACITY, capacity);
+        delayCmd();
+        DEBUG_PRINTF("  Battery capacity: %dAh\n", Battery::CAPACITY_AH);
+
+        // 0x04: Number of cells (4S for testing, 104S for production)
+        sendCommand(BMSCommand::NUM_CELLS, numCells);
+        delayCmd();
+        DEBUG_PRINTF("  Number of cells: %dS\n", numCells);
+
+        // 0x05: Max charge voltage (4.2V per cell) - Scale: voltage * 100
+        uint16_t chargeVoltage = (uint16_t)(Battery::CELL_MAX_V * 100);
+        sendCommand(BMSCommand::CHARGE_PROTECTION_V, chargeVoltage);
+        delayCmd();
+        DEBUG_PRINTF("  Charge protection: %d.%02dV\n", chargeVoltage / 100, chargeVoltage % 100);
+
+        // 0x06: Max temperature (55°C) - Scale: temp * 10
+        uint16_t maxTemp = (uint16_t)(Battery::MAX_TEMP_C * 10);
+        sendCommand(BMSCommand::OVERTEMP_PROTECTION, maxTemp);
+        delayCmd();
+        DEBUG_PRINTF("  Over-temp protection: %d.%d°C\n", maxTemp / 10, maxTemp % 10);
+
+        // 0x08: Auto-balance (0x0002=on, 0x0001=off)
+        uint16_t balanceValue = Battery::BMS_AUTO_BALANCE ? 0x0002 : 0x0001;
+        sendCommand(BMSCommand::BALANCE_CONTROL, balanceValue);
+        delayCmd();
+        DEBUG_PRINTF("  Auto-balance: %s\n", Battery::BMS_AUTO_BALANCE ? "ON" : "OFF");
+
+        // 0x0C: Channel default state after power-on (0x0002=default on)
+        uint16_t channelDefault = Battery::BMS_CHANNEL_DEFAULT ? 0x0002 : 0x0001;
+        sendCommand(BMSCommand::CHANNEL_DEFAULT_STATE, channelDefault);
+        delayCmd();
+        DEBUG_PRINTF("  Channel default: %s\n", Battery::BMS_CHANNEL_DEFAULT ? "ON" : "OFF");
+
+        // 0x0D: Host display switch (start with ON, will control based on gear state)
+        sendCommand(BMSCommand::HOST_DISPLAY_SWITCH, 0x0001);
+        delayCmd();
+        DEBUG_PRINTLN("  Host display: ON (initial state, controlled by gear)");
+
+        // 0x11: Balance start voltage (4.18V) - Scale: voltage * 100
+        uint16_t balanceStartV = (uint16_t)(Battery::CELL_BALANCE_V * 100);
+        sendCommand(BMSCommand::BALANCE_START_VOLTAGE, balanceStartV);
+        delayCmd();
+        DEBUG_PRINTF("  Balance start voltage: %d.%02dV\n", balanceStartV / 100, balanceStartV % 100);
+
+        // 0x15: Auto-reset capacity (0x0001=on)
+        uint16_t autoReset = Battery::BMS_AUTO_RESET_CAP ? 0x0001 : 0x0000;
+        sendCommand(BMSCommand::AUTO_RESET_CAPACITY, autoReset);
+        delayCmd();
+        DEBUG_PRINTF("  Auto-reset capacity: %s\n", Battery::BMS_AUTO_RESET_CAP ? "ON" : "OFF");
+    
+        // 0x16: Pre-charge delay time (3 seconds)
+        sendCommand(BMSCommand::PRECHARGE_DELAY_TIME, 0x0000);
+        delayCmd();
+        DEBUG_PRINTLN("  Pre-charge delay: 0s");
+
+        // 0x18: Low temperature protection (6°C) - Scale: temp * 10
+        uint16_t minTemp = (uint16_t)(Battery::MIN_TEMP_C * 10);
+        sendCommand(BMSCommand::LOW_TEMP_PROTECTION, minTemp);
+        delayCmd();
+        DEBUG_PRINTF("  Low-temp protection: %d.%d°C\n", minTemp / 10, minTemp % 10);
+        delayCmd();
+        delayCmd();
+    #endif
+    // 0x07: Battery arming - Start DISARMED (will arm later via setChannelEnabled)
+    sendCommand(BMSCommand::CHANNEL_CONTROL, 0x0001);  // 0x0002 = DISARMED
+    vTaskDelay(pdMS_TO_TICKS(450));
+    DEBUG_PRINTLN("  Battery arming: Prearmed (will arm when ready)");
+
+    DEBUG_PRINTLN("BMSManager: Configuration complete!");
+    
+}
+
+void BMSManager::setDisplayEnabled(bool enable) {
+    // 0x0D: Host display switch (0x0001=on, 0x0002=off)
+    uint16_t value = enable ? 0x0001 : 0x0002;
+    sendCommand(BMSCommand::HOST_DISPLAY_SWITCH, value);
+    DEBUG_PRINTF("BMSManager: Display %s\n", enable ? "ON" : "OFF");
+}
+
+void BMSManager::setNumCells(uint8_t numCells) {
+    // 0x04: Number of cells
+    sendCommand(BMSCommand::NUM_CELLS, numCells);
+    data.numCellsConfigured = numCells;
+    DEBUG_PRINTF("BMSManager: Cell count updated to %dS\n", numCells);
 }
 
 //=============================================================================

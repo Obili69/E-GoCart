@@ -1,9 +1,11 @@
 #include "web_server.h"
 #include "task_monitor.h"
 #include "wifi_manager.h"
+#include "input_manager.h"
 
 extern TaskMonitor taskMonitor;
 extern WiFiManager wifiManager;
+extern InputManager inputManager;
 
 WebServer::WebServer()
     : server(WiFi_Config::HTTP_PORT)
@@ -16,6 +18,9 @@ WebServer::WebServer()
 
 bool WebServer::begin() {
     DEBUG_PRINTLN("WebServer: Initializing...");
+
+    // Load config from LittleFS (before anything else)
+    loadConfigFromLittleFS();
 
     // Setup WebSocket
     setupWebSocket();
@@ -72,10 +77,7 @@ void WebServer::setupWebSocket() {
 }
 
 void WebServer::setupRoutes() {
-    // Serve static files from LittleFS
-    server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
-
-    // REST API endpoints
+    // REST API endpoints (must be registered BEFORE serveStatic!)
     server.on("/api/telemetry", HTTP_GET, [this](AsyncWebServerRequest *request) {
         this->handleGetTelemetry(request);
     });
@@ -153,7 +155,19 @@ void WebServer::setupRoutes() {
         this->handleGetChargingLimits(request);
     });
 
-    // 404 handler
+    // Calibration API endpoints
+    server.on("/api/calibration", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        this->handleGetCalibration(request);
+    });
+
+    server.on("/api/calibration", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        this->handleSetCalibration(request);
+    });
+
+    // Serve static files from LittleFS (MUST be registered AFTER all API routes!)
+    server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
+
+    // 404 handler (last resort)
     server.onNotFound([](AsyncWebServerRequest *request) {
         request->send(404, "text/plain", "Not found");
     });
@@ -326,7 +340,12 @@ void WebServer::handleSetConfig(AsyncWebServerRequest *request) {
     });
 
     if (updated) {
-        request->send(200, "text/plain", "Config updated");
+        // Save to LittleFS for persistence
+        if (saveConfigToLittleFS()) {
+            request->send(200, "text/plain", "Config updated and saved");
+        } else {
+            request->send(200, "text/plain", "Config updated (but failed to save to flash)");
+        }
     } else {
         request->send(400, "text/plain", "No valid parameters provided");
     }
@@ -463,6 +482,8 @@ String WebServer::getTelemetryJSON() {
     // Inputs
     doc["throttle"] = telem.throttlePercent;
     doc["regen"] = telem.regenPercent;
+    doc["throttleRawADC"] = telem.throttleRawADC;
+    doc["regenRawADC"] = telem.regenRawADC;
     doc["brake"] = telem.brakePressed;
     doc["il"] = telem.ilClosed;
 
@@ -855,5 +876,274 @@ String WebServer::getChargingLimitsJSON() {
     String output;
     serializeJson(doc, output);
     return output;
+}
+
+//=============================================================================
+// CALIBRATION API HANDLERS
+//=============================================================================
+
+void WebServer::handleGetCalibration(AsyncWebServerRequest *request) {
+    String json = getCalibrationJSON();
+    request->send(200, "application/json", json);
+}
+
+void WebServer::handleSetCalibration(AsyncWebServerRequest *request) {
+    bool updated = false;
+
+    sharedRuntimeConfig.update([&](RuntimeConfigData& config) {
+        // Throttle min ADC
+        if (request->hasParam("throttleMin")) {
+            int16_t value = request->getParam("throttleMin")->value().toInt();
+            if (value >= 0 && value <= 32767) {
+                config.throttleMinADC = value;
+                updated = true;
+            }
+        }
+
+        // Throttle max ADC
+        if (request->hasParam("throttleMax")) {
+            int16_t value = request->getParam("throttleMax")->value().toInt();
+            if (value >= 0 && value <= 32767) {
+                config.throttleMaxADC = value;
+                updated = true;
+            }
+        }
+
+        // Regen min ADC
+        if (request->hasParam("regenMin")) {
+            int16_t value = request->getParam("regenMin")->value().toInt();
+            if (value >= 0 && value <= 32767) {
+                config.regenMinADC = value;
+                updated = true;
+            }
+        }
+
+        // Regen max ADC
+        if (request->hasParam("regenMax")) {
+            int16_t value = request->getParam("regenMax")->value().toInt();
+            if (value >= 0 && value <= 32767) {
+                config.regenMaxADC = value;
+                updated = true;
+            }
+        }
+
+        // Recalculate checksum if updated
+        if (updated) {
+            config.checksum = calculateConfigChecksum(config);
+        }
+    });
+
+    if (updated) {
+        // Apply calibration to InputManager
+        RuntimeConfigData config = sharedRuntimeConfig.get();
+        inputManager.setCalibration(
+            config.throttleMinADC,
+            config.throttleMaxADC,
+            config.regenMinADC,
+            config.regenMaxADC
+        );
+
+        // Save to LittleFS for persistence
+        saveConfigToLittleFS();
+
+        request->send(200, "application/json", "{\"status\":\"ok\",\"message\":\"Calibration updated\"}");
+    } else {
+        request->send(400, "application/json", "{\"status\":\"error\",\"message\":\"No valid parameters\"}");
+    }
+}
+
+String WebServer::getCalibrationJSON() {
+    RuntimeConfigData config = sharedRuntimeConfig.get();
+    VehicleTelemetry telem = sharedTelemetry.get();
+
+    StaticJsonDocument<256> doc;
+
+    // Current calibration values
+    doc["throttleMin"] = config.throttleMinADC;
+    doc["throttleMax"] = config.throttleMaxADC;
+    doc["regenMin"] = config.regenMinADC;
+    doc["regenMax"] = config.regenMaxADC;
+
+    // Current raw ADC readings (for live calibration)
+    doc["throttleRaw"] = telem.throttleRawADC;
+    doc["regenRaw"] = telem.regenRawADC;
+
+    // Current percentages (for verification)
+    doc["throttlePercent"] = telem.throttlePercent;
+    doc["regenPercent"] = telem.regenPercent;
+
+    String output;
+    serializeJson(doc, output);
+    return output;
+}
+
+//=============================================================================
+// CONFIG PERSISTENCE (LittleFS)
+//=============================================================================
+
+bool WebServer::saveConfigToLittleFS() {
+    DEBUG_PRINTLN("WebServer: Saving config to LittleFS...");
+
+    RuntimeConfigData config = sharedRuntimeConfig.get();
+
+    // Create JSON document
+    StaticJsonDocument<1024> doc;
+
+    // CAN Timing
+    doc["canFastCycle"] = config.canFastCycle;
+    doc["canSlowCycle"] = config.canSlowCycle;
+
+    // Motor Limits
+    doc["maxTorqueNm"] = config.maxTorqueNm;
+    doc["maxRegenNm"] = config.maxRegenNm;
+    doc["maxReverseNm"] = config.maxReverseNm;
+
+    // Safety Limits
+    doc["maxMotorTemp"] = config.maxMotorTemp;
+    doc["maxInverterTemp"] = config.maxInverterTemp;
+    doc["maxBatteryTemp"] = config.maxBatteryTemp;
+    doc["criticalCellVoltage"] = config.criticalCellVoltage;
+
+    // WiFi
+    doc["enableAP"] = config.enableAP;
+    doc["enableSTA"] = config.enableSTA;
+    doc["staSSID"] = config.staSSID;
+    doc["staPassword"] = config.staPassword;
+
+    // Debug
+    doc["debugMode"] = config.debugMode;
+    doc["enableOTA"] = config.enableOTA;
+
+    // Charging config
+    doc["storageVoltagePerCell"] = config.storageVoltagePerCell;
+    doc["maxChargeVoltagePerCell"] = config.maxChargeVoltagePerCell;
+    doc["bulkChargeVoltagePerCell"] = config.bulkChargeVoltagePerCell;
+    doc["maxChargeCurrent"] = config.maxChargeCurrent;
+    doc["storageChargeCurrent"] = config.storageChargeCurrent;
+    doc["mainsCurrentLimit"] = config.mainsCurrentLimit;
+    doc["chargeTimeoutMinutes"] = config.chargeTimeoutMinutes;
+    doc["maxChargeTemp"] = config.maxChargeTemp;
+    doc["minChargeTemp"] = config.minChargeTemp;
+    doc["chargingPreset"] = config.chargingPreset;
+    doc["autoStopAtStorage"] = config.autoStopAtStorage;
+    doc["balancingEnabled"] = config.balancingEnabled;
+
+    // Pedal calibration
+    doc["throttleMinADC"] = config.throttleMinADC;
+    doc["throttleMaxADC"] = config.throttleMaxADC;
+    doc["regenMinADC"] = config.regenMinADC;
+    doc["regenMaxADC"] = config.regenMaxADC;
+
+    // Checksum (for validation)
+    doc["checksum"] = config.checksum;
+
+    // Open file for writing
+    File file = LittleFS.open("/config.json", "w");
+    if (!file) {
+        DEBUG_PRINTLN("  ERROR: Failed to open config.json for writing");
+        return false;
+    }
+
+    // Serialize JSON to file
+    if (serializeJson(doc, file) == 0) {
+        DEBUG_PRINTLN("  ERROR: Failed to write config to file");
+        file.close();
+        return false;
+    }
+
+    file.close();
+    DEBUG_PRINTLN("  Config saved successfully");
+    return true;
+}
+
+bool WebServer::loadConfigFromLittleFS() {
+    DEBUG_PRINTLN("WebServer: Loading config from LittleFS...");
+
+    // Check if file exists
+    if (!LittleFS.exists("/config.json")) {
+        DEBUG_PRINTLN("  No config file found - using defaults");
+        return false;
+    }
+
+    // Open file for reading
+    File file = LittleFS.open("/config.json", "r");
+    if (!file) {
+        DEBUG_PRINTLN("  ERROR: Failed to open config.json for reading");
+        return false;
+    }
+
+    // Parse JSON
+    StaticJsonDocument<1024> doc;
+    DeserializationError error = deserializeJson(doc, file);
+    file.close();
+
+    if (error) {
+        DEBUG_PRINTF("  ERROR: Failed to parse config.json: %s\n", error.c_str());
+        return false;
+    }
+
+    // Update shared config
+    sharedRuntimeConfig.update([&](RuntimeConfigData& config) {
+        // CAN Timing
+        if (doc.containsKey("canFastCycle")) config.canFastCycle = doc["canFastCycle"];
+        if (doc.containsKey("canSlowCycle")) config.canSlowCycle = doc["canSlowCycle"];
+
+        // Motor Limits
+        if (doc.containsKey("maxTorqueNm")) config.maxTorqueNm = doc["maxTorqueNm"];
+        if (doc.containsKey("maxRegenNm")) config.maxRegenNm = doc["maxRegenNm"];
+        if (doc.containsKey("maxReverseNm")) config.maxReverseNm = doc["maxReverseNm"];
+
+        // Safety Limits
+        if (doc.containsKey("maxMotorTemp")) config.maxMotorTemp = doc["maxMotorTemp"];
+        if (doc.containsKey("maxInverterTemp")) config.maxInverterTemp = doc["maxInverterTemp"];
+        if (doc.containsKey("maxBatteryTemp")) config.maxBatteryTemp = doc["maxBatteryTemp"];
+        if (doc.containsKey("criticalCellVoltage")) config.criticalCellVoltage = doc["criticalCellVoltage"];
+
+        // WiFi
+        if (doc.containsKey("enableAP")) config.enableAP = doc["enableAP"];
+        if (doc.containsKey("enableSTA")) config.enableSTA = doc["enableSTA"];
+        if (doc.containsKey("staSSID")) strncpy(config.staSSID, doc["staSSID"], 31);
+        if (doc.containsKey("staPassword")) strncpy(config.staPassword, doc["staPassword"], 63);
+
+        // Debug
+        if (doc.containsKey("debugMode")) config.debugMode = doc["debugMode"];
+        if (doc.containsKey("enableOTA")) config.enableOTA = doc["enableOTA"];
+
+        // Charging config
+        if (doc.containsKey("storageVoltagePerCell")) config.storageVoltagePerCell = doc["storageVoltagePerCell"];
+        if (doc.containsKey("maxChargeVoltagePerCell")) config.maxChargeVoltagePerCell = doc["maxChargeVoltagePerCell"];
+        if (doc.containsKey("bulkChargeVoltagePerCell")) config.bulkChargeVoltagePerCell = doc["bulkChargeVoltagePerCell"];
+        if (doc.containsKey("maxChargeCurrent")) config.maxChargeCurrent = doc["maxChargeCurrent"];
+        if (doc.containsKey("storageChargeCurrent")) config.storageChargeCurrent = doc["storageChargeCurrent"];
+        if (doc.containsKey("mainsCurrentLimit")) config.mainsCurrentLimit = doc["mainsCurrentLimit"];
+        if (doc.containsKey("chargeTimeoutMinutes")) config.chargeTimeoutMinutes = doc["chargeTimeoutMinutes"];
+        if (doc.containsKey("maxChargeTemp")) config.maxChargeTemp = doc["maxChargeTemp"];
+        if (doc.containsKey("minChargeTemp")) config.minChargeTemp = doc["minChargeTemp"];
+        if (doc.containsKey("chargingPreset")) config.chargingPreset = doc["chargingPreset"];
+        if (doc.containsKey("autoStopAtStorage")) config.autoStopAtStorage = doc["autoStopAtStorage"];
+        if (doc.containsKey("balancingEnabled")) config.balancingEnabled = doc["balancingEnabled"];
+
+        // Pedal calibration
+        if (doc.containsKey("throttleMinADC")) config.throttleMinADC = doc["throttleMinADC"];
+        if (doc.containsKey("throttleMaxADC")) config.throttleMaxADC = doc["throttleMaxADC"];
+        if (doc.containsKey("regenMinADC")) config.regenMinADC = doc["regenMinADC"];
+        if (doc.containsKey("regenMaxADC")) config.regenMaxADC = doc["regenMaxADC"];
+
+        // Recalculate checksum
+        config.checksum = calculateConfigChecksum(config);
+    });
+
+    // Apply throttle/regen calibration to InputManager
+    RuntimeConfigData config = sharedRuntimeConfig.get();
+    inputManager.setCalibration(
+        config.throttleMinADC,
+        config.throttleMaxADC,
+        config.regenMinADC,
+        config.regenMaxADC
+    );
+    DEBUG_PRINTLN("  Calibration applied to InputManager");
+
+    DEBUG_PRINTLN("  Config loaded successfully");
+    return true;
 }
 

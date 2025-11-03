@@ -1,4 +1,7 @@
 #include "vehicle_control.h"
+#include "bms_manager.h"
+#include "input_manager.h"
+#include "contactor_manager.h"
 
 VehicleControl::VehicleControl()
     : currentGear(GearState::NEUTRAL)
@@ -8,15 +11,36 @@ VehicleControl::VehicleControl()
     , brakePressed(false)
     , motorSpeedRPM(0.0f)
     , torqueDemand(0)
+    , bmsManager(nullptr)
+    , inputManager(nullptr)
+    , contactorManager(nullptr)
     , lastUpdateTime(0)
+    , regenEnabled(true)
 {
 }
 
-void VehicleControl::begin() {
+void VehicleControl::begin(BMSManager* bmsMgr, InputManager* inputMgr, ContactorManager* contactorMgr) {
+    bmsManager = bmsMgr;
+    inputManager = inputMgr;
+    contactorManager = contactorMgr;
     DEBUG_PRINTLN("VehicleControl: Initialized");
+    if (bmsManager != nullptr) {
+        DEBUG_PRINTLN("  BMS display control enabled");
+    }
+    if (inputManager != nullptr) {
+        DEBUG_PRINTLN("  Safety allowance monitoring enabled");
+    }
+    if (contactorManager != nullptr) {
+        DEBUG_PRINTLN("  Emergency contactor shutdown enabled");
+    }
 }
 
 void VehicleControl::update() {
+    // Check safety allowances first
+    checkDischargeAllowance();
+    checkChargeAllowance();
+
+    // Calculate torque demand
     torqueDemand = calculateTorque();
 }
 
@@ -29,23 +53,41 @@ void VehicleControl::handleDirectionToggle() {
         DEBUG_PRINTLN("Direction: System not ready");
         return;
     }
-    
-    // Cycle through gears: N -> D -> R -> D -> ...
-    switch (currentGear) {
-        case GearState::NEUTRAL:
-            currentGear = GearState::DRIVE;
-            DEBUG_PRINTLN("Gear: DRIVE");
-            break;
-            
-        case GearState::DRIVE:
-            currentGear = GearState::REVERSE;
-            DEBUG_PRINTLN("Gear: REVERSE");
-            break;
-            
-        case GearState::REVERSE:
-            currentGear = GearState::DRIVE;
-            DEBUG_PRINTLN("Gear: DRIVE");
-            break;
+
+    // Short press: Toggle between D and R only (doesn't affect Neutral)
+    if (currentGear == GearState::NEUTRAL) {
+        currentGear = GearState::DRIVE;
+        DEBUG_PRINTLN("Gear: DRIVE");
+    } else if (currentGear == GearState::DRIVE) {
+        currentGear = GearState::REVERSE;
+        DEBUG_PRINTLN("Gear: REVERSE");
+    } else if (currentGear == GearState::REVERSE) {
+        currentGear = GearState::DRIVE;
+        DEBUG_PRINTLN("Gear: DRIVE");
+    }
+
+    // Update BMS display based on new gear state
+    updateBMSDisplay();
+}
+
+void VehicleControl::setNeutral() {
+    currentGear = GearState::NEUTRAL;
+    DEBUG_PRINTLN("Gear: NEUTRAL");
+
+    // Update BMS display based on new gear state
+    updateBMSDisplay();
+}
+
+void VehicleControl::updateBMSDisplay() {
+    if (bmsManager == nullptr) {
+        return;  // BMS manager not available
+    }
+
+    // Display ON in NEUTRAL, OFF in DRIVE/REVERSE
+    if (currentGear == GearState::NEUTRAL) {
+        bmsManager->setDisplayEnabled(true);   // Display ON
+    } else {
+        bmsManager->setDisplayEnabled(false);  // Display OFF
     }
 }
 
@@ -54,41 +96,42 @@ void VehicleControl::handleDirectionToggle() {
 //=============================================================================
 
 int16_t VehicleControl::calculateTorque() {
-    // Safety checks
-    if (!isSafeToApplyTorque()) {
-        return 0;
-    }
-    
     int16_t torque = 0;
-    
+
     // Regen has priority over throttle (only when throttle is zero)
-    if (throttleInput < 1.0f && regenInput > 1.0f) {
+    // Regen: Only in DRIVE gear, can work with brake pressed, requires charge allowed
+    if (throttleInput < 1.0f && regenInput > 1.0f && regenEnabled && currentGear == GearState::DRIVE) {
         // Regen mode: map 0-100% to 0 to -MAX_REGEN_NM
         float regenNm = (regenInput / 100.0f) * Motor::MAX_REGEN_NM;
         torque = -(int16_t)regenNm;  // Negative for regen
-        
+
         // Apply regen curve based on motor speed
         torque = applyRegenCurve(torque);
-        
+
     } else if (throttleInput > 1.0f) {
-        // Throttle mode: map 0-100% to 0 to MAX_TORQUE
+        // Throttle mode: requires safety checks (no brake, system ready, not neutral)
+        if (!isSafeToApplyTorque()) {
+            return 0;
+        }
+
+        // Apply throttle based on gear
         if (currentGear == GearState::DRIVE) {
             float throttleNm = (throttleInput / 100.0f) * Motor::MAX_TORQUE_NM;
             torque = (int16_t)throttleNm;
-            
+
         } else if (currentGear == GearState::REVERSE) {
             // Limit torque in reverse
             float throttleNm = (throttleInput / 100.0f) * Motor::MAX_REVERSE_NM;
             torque = -(int16_t)throttleNm;  // Negative for reverse
         }
-        
+
         // Apply torque curve based on motor speed
         torque = applyTorqueCurve(torque);
     }
-    
+
     // Apply deadzone
     applyDeadzone(torque);
-    
+
     return torque;
 }
 
@@ -157,6 +200,55 @@ void VehicleControl::applyDeadzone(int16_t& torque) {
 
 void VehicleControl::emergencyStop() {
     DEBUG_PRINTLN("EMERGENCY STOP");
+
+    // Emergency shutdown contactors FIRST (safety critical!)
+    if (contactorManager != nullptr) {
+        contactorManager->emergencyShutdown();
+    }
+
     torqueDemand = 0;
     currentGear = GearState::NEUTRAL;
+}
+
+//=============================================================================
+// SAFETY ALLOWANCE MONITORING
+//=============================================================================
+
+void VehicleControl::checkDischargeAllowance() {
+    if (inputManager == nullptr) {
+        return;
+    }
+
+    // Check if discharge is not allowed during driving
+    if (!inputManager->isDischargeAllowed()) {
+        // SAFETY: Force vehicle to Neutral - no discharge allowed!
+        if (currentGear != GearState::NEUTRAL) {
+            DEBUG_PRINTLN("SAFETY: Discharge not allowed - forcing NEUTRAL!");
+            setNeutral();
+        }
+
+        // Also disable torque immediately
+        torqueDemand = 0;
+    }
+}
+
+void VehicleControl::checkChargeAllowance() {
+    if (inputManager == nullptr) {
+        return;
+    }
+
+    // Check if charge is not allowed - disables regen but allows driving
+    if (!inputManager->isChargeAllowed()) {
+        // SAFETY: Disable regen - no charge allowed!
+        if (regenEnabled) {
+            DEBUG_PRINTLN("SAFETY: Charge not allowed - disabling REGEN!");
+            regenEnabled = false;
+        }
+    } else {
+        // Re-enable regen if charge becomes allowed again
+        if (!regenEnabled) {
+            DEBUG_PRINTLN("SAFETY: Charge allowed - enabling REGEN!");
+            regenEnabled = true;
+        }
+    }
 }

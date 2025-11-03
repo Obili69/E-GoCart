@@ -23,13 +23,9 @@ bool DisplayManager::begin() {
 
     // Wait for display to boot
     DEBUG_PRINTLN("  Waiting for display boot...");
-    delay(500);
+    delay(1000);  // Give display more time to boot up
 
-    // Reset display and go to page 0
-    DEBUG_PRINTLN("  Sending reset command...");
-    sendCommand("reset");  // Fixed typo: was "rest"
-    delay(500);
-
+    // Go to page 0 (removed reset command that was causing ESP32 reboot)
     DEBUG_PRINTLN("  Setting page 0...");
     sendCommand("page 0");
     delay(100);

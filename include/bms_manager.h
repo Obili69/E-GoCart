@@ -3,9 +3,12 @@
 #include "config.h"
 #include "data_structures.h"
 
+// Forward declaration
+class CANManager;
+
 //=============================================================================
 // 192S BMS MANAGER - Configured for 104S LiPo Pack
-// CAN Protocol: RX=0xF4, TX=0xF5, 500kbps, Extended Format
+// CAN Protocol: RX=0xF4, TX=0xF5, 250kbps, Extended 29-bit Format
 //=============================================================================
 
 //=============================================================================
@@ -84,8 +87,9 @@ public:
 
     /**
      * @brief Initialize BMS manager
+     * @param canMgr Pointer to CANManager for sending commands
      */
-    void begin();
+    void begin(CANManager* canMgr);
 
     /**
      * @brief Process incoming BMS CAN message
@@ -112,6 +116,21 @@ public:
      * @brief Get extended BMS data
      */
     BMSDataExtended getData() const { return data; }
+
+    /**
+     * @brief Get BMS current in Amps (for safety checks)
+     * @return Current in Amps (positive = discharge, negative = charge)
+     */
+    float getCurrentAmps() const { return data.packCurrent * 0.01f; }
+
+    /**
+     * @brief Check if current is within zero threshold
+     * @return true if |current| < Battery::CURRENT_ZERO_THRESHOLD
+     */
+    bool isCurrentZero() const {
+        float current = getCurrentAmps();
+        return (fabs(current) < Battery::CURRENT_ZERO_THRESHOLD);
+    }
 
     /**
      * @brief Check if BMS is alive
@@ -153,9 +172,29 @@ public:
      */
     void requestConnection();
 
+    /**
+     * @brief Send full BMS configuration
+     * @param numCells Number of series cells (default from Battery::NUM_CELLS_TESTING)
+     * Call this after connection is established
+     */
+    void sendConfiguration(uint8_t numCells = Battery::NUM_CELLS_TESTING);
+
+    /**
+     * @brief Set host display state (turn on/off BMS display)
+     * @param enable true=display on, false=display off
+     */
+    void setDisplayEnabled(bool enable);
+
+    /**
+     * @brief Update number of cells configuration
+     * @param numCells Number of series cells (4 for testing, 104 for production)
+     */
+    void setNumCells(uint8_t numCells);
+
 private:
     BMSDataExtended data;
     SemaphoreHandle_t dataMutex;
+    CANManager* canManager;  // Pointer to CAN manager for sending
 
     // Message tracking (which message groups we've received)
     uint8_t receivedGroups[11];  // Track groups 1-6, 71-73, 80-82 (summary data)

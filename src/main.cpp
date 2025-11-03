@@ -4,16 +4,29 @@
 #include <freertos/queue.h>
 #include <freertos/semphr.h>
 #include <freertos/event_groups.h>
+#include "driver/rtc_io.h"
 #include "config.h"
 #include "data_structures.h"
 #include "input_manager.h"
 #include "state_manager.h"
 #include "vehicle_control.h"
 #include "can_manager.h"
+#include "bms_manager.h"
+#include "contactor_manager.h"
 #include "display_manager.h"
 #include "wifi_manager.h"
 #include "web_server.h"
 #include "task_monitor.h"
+
+//=============================================================================
+// DEEP SLEEP CONFIGURATION
+//=============================================================================
+#define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)  // 2 ^ GPIO_NUMBER in hex
+#define WAKEUP_GPIO_START        GPIO_NUM_7      // START/STOP button
+#define WAKEUP_GPIO_CHARGER      GPIO_NUM_9      // Charger wakeup
+
+// Define bitmask for multiple GPIOs
+uint64_t wakeup_bitmask = BUTTON_PIN_BITMASK(WAKEUP_GPIO_START) | BUTTON_PIN_BITMASK(WAKEUP_GPIO_CHARGER);
 
 //=============================================================================
 // GLOBAL OBJECTS
@@ -22,6 +35,8 @@ InputManager inputManager;
 StateManager stateManager;
 VehicleControl vehicleControl;
 CANManager canManager;
+BMSManager bmsManager;
+ContactorManager contactorManager;
 DisplayManager displayManager;
 WiFiManager wifiManager;
 WebServer webServer;
@@ -40,6 +55,7 @@ TaskHandle_t taskHandleDisplay = NULL;
 TaskHandle_t taskHandleWiFi = NULL;
 TaskHandle_t taskHandleWeb = NULL;
 TaskHandle_t taskHandleMonitor = NULL;
+TaskHandle_t taskHandleLED = NULL;  // LED control task
 
 #if HARDWARE_TEST_MODE
 TaskHandle_t taskHandleSimData = NULL;  // Simulated data generator
@@ -72,9 +88,20 @@ void taskCANRx(void* parameter) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(10);  // 10ms cycle
 
+    TickType_t lastBMSUpdate = 0;
+    const TickType_t bmsUpdateInterval = pdMS_TO_TICKS(100);  // Update BMS every 100ms
+
     while (1) {
         // Process all messages in queue
         canManager.processRxQueue();
+
+        // Update BMS manager periodically (check timeouts, update shared data)
+        TickType_t now = xTaskGetTickCount();
+        if ((now - lastBMSUpdate) >= bmsUpdateInterval) {
+            bmsManager.update();
+            contactorManager.update();  // Update contactor state machine
+            lastBMSUpdate = now;
+        }
 
         // Feed watchdog
         FEED_WATCHDOG();
@@ -166,6 +193,10 @@ void taskStateManager(void* parameter) {
         // Update state machine
         stateManager.update();
 
+        // Update cooling pump based on motor/inverter temperatures
+        DMCData dmcData = sharedDMCData.get();
+        stateManager.updateCoolingPump(dmcData.tempMotor, dmcData.tempInverter);
+
         // Handle charging state
         if (stateManager.isCharging()) {
             uint8_t chargerState = 1;  // 1 = charging enabled
@@ -190,39 +221,60 @@ void taskSafetyMonitor(void* parameter) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(100);  // 100ms cycle
 
+    // Rate limiting for warnings (only print once per 5 seconds)
+    static unsigned long lastWarningTime[5] = {0, 0, 0, 0, 0};
+    const unsigned long WARNING_RATE_LIMIT = 5000;  // 5 seconds
+    enum WarningType { MOTOR_TEMP = 0, INVERTER_TEMP = 1, VOLTAGE = 2, SOC = 3, CELL_CRITICAL = 4 };
+
     while (1) {
         BMSData bmsData = sharedBMSData.get();
         DMCData dmcData = sharedDMCData.get();
         RuntimeConfigData config = sharedRuntimeConfig.get();
+        unsigned long currentTime = millis();
 
         // Check motor temperature
         if (dmcData.tempMotor > config.maxMotorTemp) {
-            DEBUG_PRINTLN("WARNING: Motor overtemperature!");
-            displayManager.showWarning("MOTOR OVERHEAT");
+            if (currentTime - lastWarningTime[MOTOR_TEMP] > WARNING_RATE_LIMIT) {
+                DEBUG_PRINTLN("WARNING: Motor overtemperature!");
+                displayManager.showWarning("MOTOR OVERHEAT");
+                lastWarningTime[MOTOR_TEMP] = currentTime;
+            }
         }
 
         // Check inverter temperature
         if (dmcData.tempInverter > config.maxInverterTemp) {
-            DEBUG_PRINTLN("WARNING: Inverter overtemperature!");
-            displayManager.showWarning("INVERTER OVERHEAT");
+            if (currentTime - lastWarningTime[INVERTER_TEMP] > WARNING_RATE_LIMIT) {
+                DEBUG_PRINTLN("WARNING: Inverter overtemperature!");
+                displayManager.showWarning("INVERTER OVERHEAT");
+                lastWarningTime[INVERTER_TEMP] = currentTime;
+            }
         }
 
         // Check battery voltage
         if (bmsData.voltage < Battery::MIN_VOLTAGE) {
-            DEBUG_PRINTLN("WARNING: Battery undervoltage!");
-            displayManager.showWarning("LOW VOLTAGE");
+            if (currentTime - lastWarningTime[VOLTAGE] > WARNING_RATE_LIMIT) {
+                DEBUG_PRINTLN("WARNING: Battery undervoltage!");
+                displayManager.showWarning("LOW VOLTAGE");
+                lastWarningTime[VOLTAGE] = currentTime;
+            }
         }
 
         // Check SOC
         if (bmsData.soc < Battery::MIN_SOC) {
-            DEBUG_PRINTLN("WARNING: Low battery!");
-            displayManager.showWarning("LOW BATTERY");
+            if (currentTime - lastWarningTime[SOC] > WARNING_RATE_LIMIT) {
+                DEBUG_PRINTLN("WARNING: Low battery!");
+                displayManager.showWarning("LOW BATTERY");
+                lastWarningTime[SOC] = currentTime;
+            }
         }
 
-        // Check cell voltage
-        if (bmsData.minCellVoltage < config.criticalCellVoltage) {
-            DEBUG_PRINTLN("CRITICAL: Cell voltage too low!");
-            displayManager.showWarning("CELL CRITICAL");
+        // Check cell voltage (critical - trigger emergency stop only when driving)
+        if (bmsData.minCellVoltage < config.criticalCellVoltage && stateManager.isDriving()) {
+            if (currentTime - lastWarningTime[CELL_CRITICAL] > WARNING_RATE_LIMIT) {
+                DEBUG_PRINTLN("CRITICAL: Cell voltage too low!");
+                displayManager.showWarning("CELL CRITICAL");
+                lastWarningTime[CELL_CRITICAL] = currentTime;
+            }
             vehicleControl.emergencyStop();
             xEventGroupSetBits(systemEvents, EVENT_EMERGENCY_STOP);
         }
@@ -260,84 +312,118 @@ void taskInputManager(void* parameter) {
         // Update all inputs
         inputManager.update();
 
-        // Handle START button
-        static bool startButtonProcessed = false;
-        if (inputManager.isStartPressed()) {
-            if (!startButtonProcessed) {
-                stateManager.handleStartButton();
-                startButtonProcessed = true;
-            }
-        } else {
-            startButtonProcessed = false;
+        // Handle START/STOP button
+        // - 2 second hold: toggle start/stop
+        // - 15 second hold: restart ESP32
+        static bool startStopButtonHeld = false;
+        static unsigned long startStopHoldStart = 0;
+        // Handle Start/Stop button (short press ignored, 0.7s = start/stop, 4s = reset)
+        // Logic: Press starts timer, Release evaluates duration and performs action
+        const unsigned long START_STOP_HOLD_TIME = 700;    // 0.7 seconds
+        const unsigned long RESET_HOLD_TIME = 2000;        // 4 seconds
+
+        bool startStopPressedNow = inputManager.isStartStopPressed();
+
+        // Detect button press (transition from not pressed to pressed)
+        if (startStopPressedNow && !startStopButtonHeld) {
+            // Button just pressed - start timer, don't do anything yet
+            startStopButtonHeld = true;
+            startStopHoldStart = millis();
+            DEBUG_PRINTLN("Start/Stop button pressed - waiting for release");
         }
 
-        // Handle STOP button (with hold-to-sleep)
-        if (inputManager.isStopPressed()) {
-            if (!stopButtonHeld) {
-                stopButtonHoldStart = millis();
-                stopButtonHeld = true;
-                DEBUG_PRINTLN("Stop button pressed");
-            }
+        // Detect button release (transition from pressed to not pressed)
+        if (!startStopPressedNow && startStopButtonHeld) {
+            // Button just released - evaluate how long it was held
+            unsigned long holdDuration = millis() - startStopHoldStart;
 
-            // Check for hold timeout
-            unsigned long holdTime = millis() - stopButtonHoldStart;
-            if (holdTime >= Timing::SLEEP_TIMEOUT) {
-                RuntimeConfigData config = sharedRuntimeConfig.get();
+            if (holdDuration >= RESET_HOLD_TIME) {
+                // Long press (4+ seconds) - Reset/Restart ESP32
+                DEBUG_PRINTLN("Start/Stop button held 4s - Restarting ESP32...");
+                vTaskDelay(pdMS_TO_TICKS(100));
+                ESP.restart();
+            } else if (holdDuration >= START_STOP_HOLD_TIME) {
+                // Medium press (0.7-4 seconds) - Stop system if in DRIVE + NEUTRAL
+                VehicleState currentState = stateManager.getCurrentState();
+                GearState currentGear = vehicleControl.getCurrentGear();
 
-                // Only enter sleep if not in debug mode
-                if (!config.debugMode) {
-                    DEBUG_PRINTLN("Stop button held - Entering sleep mode...");
-                    stateManager.handleStopButton();
-                    vTaskDelay(pdMS_TO_TICKS(100));
-                    esp_deep_sleep_start();
-                } else {
-                    DEBUG_PRINTLN("Debug mode: Sleep disabled");
-                    stopButtonHeld = false;
+                if (currentState == VehicleState::DRIVE && currentGear == GearState::NEUTRAL) {
+                    DEBUG_PRINTLN("Stop request from DRIVE/NEUTRAL");
+                    stateManager.handleStopRequest();
                 }
+                // Ignore in other states (SLEEP/INIT handled by wakeup, CHARGING ignores button)
             }
-        } else {
-            stopButtonHeld = false;
+            // Short press (< 0.7 seconds) - do nothing
+
+            startStopButtonHeld = false;
         }
 
-        // Handle RESET button
-        if (inputManager.isResetPressed()) {
-            DEBUG_PRINTLN("Reset button pressed - Restarting ESP32...");
-            vTaskDelay(pdMS_TO_TICKS(100));
-            ESP.restart();
-        }
-
-        // Handle Interlock
+        // Monitor interlock
         static bool ilWasClosed = true;
         bool ilClosed = inputManager.isILClosed();
 
         if (ilWasClosed && !ilClosed) {
-            DEBUG_PRINTLN("Interlock opened!");
-            stateManager.handleILOpen();
+            DEBUG_PRINTLN("INTERLOCK OPEN!");
+            stateManager.handleEmergencyShutdown();
             xEventGroupClearBits(systemEvents, EVENT_IL_CLOSED);
         } else if (!ilWasClosed && ilClosed) {
             xEventGroupSetBits(systemEvents, EVENT_IL_CLOSED);
         }
         ilWasClosed = ilClosed;
 
-        // Handle charger connection
+        // Monitor charger pin (sends 12V when connected)
         static bool chargerWasConnected = false;
         bool chargerConnected = inputManager.isChargerConnected();
 
-        if (!chargerWasConnected && chargerConnected) {
-            DEBUG_PRINTLN("Charger connected");
-            stateManager.handleChargerConnected();
-            xEventGroupSetBits(systemEvents, EVENT_CHARGER_CONNECTED);
-        } else if (chargerWasConnected && !chargerConnected) {
-            DEBUG_PRINTLN("Charger disconnected");
-            stateManager.handleChargerDisconnected();
-            xEventGroupClearBits(systemEvents, EVENT_CHARGER_CONNECTED);
+        if (chargerConnected != chargerWasConnected) {
+            stateManager.handleChargerPinChange(chargerConnected);
+            if (chargerConnected) {
+                xEventGroupSetBits(systemEvents, EVENT_CHARGER_CONNECTED);
+            } else {
+                xEventGroupClearBits(systemEvents, EVENT_CHARGER_CONNECTED);
+            }
+            chargerWasConnected = chargerConnected;
         }
-        chargerWasConnected = chargerConnected;
 
-        // Handle direction toggle
-        if (inputManager.isDirectionTogglePressed()) {
-            vehicleControl.handleDirectionToggle();
+        // Handle direction toggle (short press = toggle D/R, 0.7s hold = Neutral)
+        // IGNORE in CHARGING state - buttons disabled during charging
+        // Logic: Press starts timer, Release evaluates duration and performs action
+        VehicleState currentState = stateManager.getCurrentState();
+
+        if (currentState != VehicleState::CHARGING) {
+            static bool directionButtonHeld = false;
+            static unsigned long directionPressTime = 0;
+            const unsigned long NEUTRAL_HOLD_TIME = 700;   // 0.7 seconds
+
+            // Get raw button state
+            bool directionHeldNow = inputManager.isDirectionToggleHeld();
+
+        // Detect button press (transition from not held to held)
+        if (directionHeldNow && !directionButtonHeld) {
+            // Button just pressed - start timer, don't do anything yet
+            directionButtonHeld = true;
+            directionPressTime = millis();
+            DEBUG_PRINTLN("Direction button pressed - waiting for release");
         }
+
+        // Detect button release (transition from held to not held)
+        if (!directionHeldNow && directionButtonHeld) {
+            // Button just released - evaluate how long it was held
+            unsigned long holdDuration = millis() - directionPressTime;
+
+            if (holdDuration >= NEUTRAL_HOLD_TIME) {
+                // Long press (0.7+ seconds) - set to Neutral
+                DEBUG_PRINTLN("Direction button held 0.7s - Setting to NEUTRAL");
+                vehicleControl.setNeutral();
+            } else {
+                // Short press - toggle between D and R
+                DEBUG_PRINTLN("Direction button short press - switching D/R");
+                vehicleControl.handleDirectionToggle();
+            }
+
+            directionButtonHeld = false;
+        }
+        }  // End if (currentState != VehicleState::CHARGING)
 
         // Feed watchdog
         FEED_WATCHDOG();
@@ -454,6 +540,8 @@ void taskWebServer(void* parameter) {
         // Simulated input data
         telem.throttlePercent = (dmcData.torqueActual > 0) ? random(30, 80) : 0;
         telem.regenPercent = (dmcData.torqueActual < 0) ? random(20, 60) : 0;
+        telem.throttleRawADC = random(0, 26400);
+        telem.regenRawADC = random(0, 26400);
         telem.brakePressed = (dmcData.torqueActual < 0);
         telem.ilClosed = true;
         telem.bmsAlive = true;
@@ -463,6 +551,8 @@ void taskWebServer(void* parameter) {
         // Real hardware data
         telem.throttlePercent = inputManager.getThrottlePercent();
         telem.regenPercent = inputManager.getRegenPercent();
+        telem.throttleRawADC = inputManager.getThrottleRawADC();
+        telem.regenRawADC = inputManager.getRegenRawADC();
         telem.brakePressed = inputManager.isBrakePressed();
         telem.ilClosed = inputManager.isILClosed();
         telem.bmsAlive = canManager.isBMSAlive();
@@ -499,6 +589,123 @@ void taskTaskMonitor(void* parameter) {
 
         // Longer delay - monitoring doesn't need frequent updates
         vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+/**
+ * LED Control Task
+ * Controls status and direction LEDs with different blink patterns
+ */
+void taskLEDControl(void* parameter) {
+    DEBUG_PRINTLN("Task: LED Control started");
+
+    // Initialize LED pins
+    pinMode(Pins::STATUS_LED, OUTPUT);
+    pinMode(Pins::DIRECTION_LED, OUTPUT);
+    digitalWrite(Pins::STATUS_LED, LOW);
+    digitalWrite(Pins::DIRECTION_LED, LOW);
+
+    unsigned long lastStatusToggle = 0;
+    unsigned long lastDirectionToggle = 0;
+    bool statusLedState = false;
+    bool directionLedState = false;
+
+    while (1) {
+        unsigned long currentTime = millis();
+        VehicleState currentState = stateManager.getCurrentState();
+        GearState currentGear = vehicleControl.getCurrentGear();
+        EventBits_t eventBits = xEventGroupGetBits(systemEvents);
+
+        // Check for errors
+        bool hasEmergencyStop = (eventBits & EVENT_EMERGENCY_STOP) != 0;
+        bool bmsAlive = (eventBits & EVENT_BMS_ALIVE) != 0;
+        bool lowBattery = false;
+        bool hasContactorError = contactorManager.hasError();
+
+        // Check for low battery
+        BMSData bmsData = sharedBMSData.get();
+        if (bmsData.soc <= Battery::MIN_SOC) {
+            lowBattery = true;
+        }
+
+        // Check for any error condition
+        bool hasError = hasEmergencyStop || !bmsAlive || lowBattery || hasContactorError;
+
+        // ===== ERROR STATE: 20Hz FLASH ON BOTH LEDS =====
+        if (hasError) {
+            // 20Hz = 50ms period = 25ms on, 25ms off
+            if (currentTime - lastStatusToggle >= 25) {
+                statusLedState = !statusLedState;
+                digitalWrite(Pins::STATUS_LED, statusLedState ? HIGH : LOW);
+                digitalWrite(Pins::DIRECTION_LED, statusLedState ? HIGH : LOW);  // Both LEDs in sync
+                lastStatusToggle = currentTime;
+                lastDirectionToggle = currentTime;
+            }
+        }
+        // ===== NORMAL OPERATION =====
+        else if (currentState == VehicleState::INIT || currentState == VehicleState::READY) {
+            // Slow blink (1Hz: 500ms on, 500ms off)
+            if (currentTime - lastStatusToggle >= 500) {
+                statusLedState = !statusLedState;
+                digitalWrite(Pins::STATUS_LED, statusLedState ? HIGH : LOW);
+                lastStatusToggle = currentTime;
+            }
+
+        } else if (currentState == VehicleState::DRIVE) {
+            // Solid ON
+            digitalWrite(Pins::STATUS_LED, HIGH);
+
+        } else if (currentState == VehicleState::CHARGING) {
+            // Alternating blink with direction LED (2Hz: 250ms on, 250ms off)
+            if (currentTime - lastStatusToggle >= 250) {
+                statusLedState = !statusLedState;
+                digitalWrite(Pins::STATUS_LED, statusLedState ? HIGH : LOW);
+                lastStatusToggle = currentTime;
+            }
+
+        } else {
+            // SLEEP: OFF
+            digitalWrite(Pins::STATUS_LED, LOW);
+        }
+
+        // ===== DIRECTION BUTTON LED =====
+        if (currentState == VehicleState::INIT || currentState == VehicleState::READY) {
+            // Slow blink (1Hz: 500ms on, 500ms off)
+            if (currentTime - lastDirectionToggle >= 500) {
+                directionLedState = !directionLedState;
+                digitalWrite(Pins::DIRECTION_LED, directionLedState ? HIGH : LOW);
+                lastDirectionToggle = currentTime;
+            }
+
+        } else if (currentState == VehicleState::DRIVE) {
+            // Gear-based logic
+            if (currentGear == GearState::DRIVE) {
+                digitalWrite(Pins::DIRECTION_LED, HIGH);  // Solid ON
+            } else if (currentGear == GearState::REVERSE) {
+                // 2Hz blink (500ms period = 250ms on, 250ms off)
+                if (currentTime - lastDirectionToggle >= 250) {
+                    directionLedState = !directionLedState;
+                    digitalWrite(Pins::DIRECTION_LED, directionLedState ? HIGH : LOW);
+                    lastDirectionToggle = currentTime;
+                }
+            } else {
+                digitalWrite(Pins::DIRECTION_LED, LOW);  // OFF in NEUTRAL
+            }
+
+        } else if (currentState == VehicleState::CHARGING) {
+            // Alternating blink (opposite of start LED)
+            if (currentTime - lastDirectionToggle >= 250) {
+                digitalWrite(Pins::DIRECTION_LED, !statusLedState ? HIGH : LOW);  // Opposite of start LED
+                lastDirectionToggle = currentTime;
+            }
+
+        } else {
+            // SLEEP: OFF
+            digitalWrite(Pins::DIRECTION_LED, LOW);
+        }
+
+        // Update at 50Hz (20ms) for smooth 20Hz error blink
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
 
@@ -635,11 +842,59 @@ void taskSimulatedData(void* parameter) {
 void setup() {
     // Initialize serial for debugging
     Serial.begin(115200);
-    delay(500);
+    //delay(500);
 
     DEBUG_PRINTLN("\n\n========================================");
     DEBUG_PRINTLN("  VCU FreeRTOS - Starting Up");
     DEBUG_PRINTLN("========================================\n");
+
+    // Check wakeup reason FIRST - before initializing anything
+    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+    bool wokeFromCharger = false;
+
+    DEBUG_PRINT("Wakeup reason: ");
+    DEBUG_PRINTLN((int)wakeup_reason);
+
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT1) {
+        uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
+
+        Serial.print("GPIO that triggered wake: GPIO ");
+        Serial.println((log(wakeup_pin_mask))/log(2), 0);
+
+        // Check which pin caused the wake-up
+        bool startButtonTriggered = (wakeup_pin_mask & BUTTON_PIN_BITMASK(WAKEUP_GPIO_START)) != 0;
+        bool chargerTriggered = (wakeup_pin_mask & BUTTON_PIN_BITMASK(WAKEUP_GPIO_CHARGER)) != 0;
+
+        if (chargerTriggered) {
+            DEBUG_PRINTLN("Woke from CHARGER");
+            wokeFromCharger = true;
+        } else if (startButtonTriggered) {
+            DEBUG_PRINTLN("Woke from START button");
+            wokeFromCharger = false;
+        } else {
+            // Unknown pin - go back to sleep
+            DEBUG_PRINTLN("Unknown wakeup pin - returning to sleep");
+            uint64_t wakeup_bitmask = (1ULL << GPIO_NUM_7) | (1ULL << GPIO_NUM_9);
+            esp_sleep_enable_ext1_wakeup(wakeup_bitmask, ESP_EXT1_WAKEUP_ANY_HIGH);
+            rtc_gpio_pulldown_en(GPIO_NUM_7);
+            rtc_gpio_pullup_dis(GPIO_NUM_7);
+            rtc_gpio_pulldown_en(GPIO_NUM_9);
+            rtc_gpio_pullup_dis(GPIO_NUM_9);
+            delay(100);
+            esp_deep_sleep_start();
+        }
+    } else {
+        // Any other wakeup reason (reset button, power-on, etc.) - go to deep sleep
+        DEBUG_PRINTLN("Reset/unknown wakeup - entering deep sleep");
+        uint64_t wakeup_bitmask = (1ULL << GPIO_NUM_7) | (1ULL << GPIO_NUM_9);
+        esp_sleep_enable_ext1_wakeup(wakeup_bitmask, ESP_EXT1_WAKEUP_ANY_HIGH);
+        rtc_gpio_pulldown_en(GPIO_NUM_7);
+        rtc_gpio_pullup_dis(GPIO_NUM_7);
+        rtc_gpio_pulldown_en(GPIO_NUM_9);
+        rtc_gpio_pullup_dis(GPIO_NUM_9);
+        delay(100);
+        esp_deep_sleep_start();
+    }
 
     // Create queues
     canRxQueue = xQueueCreate(FreeRTOS::QUEUE_CAN_RX, sizeof(CANMessage));
@@ -678,17 +933,30 @@ void setup() {
         while (1) { delay(1000); }
     }
 
-    DEBUG_PRINTLN("Initializing State Manager...");
-    stateManager.begin();
-
-    DEBUG_PRINTLN("Initializing Vehicle Control...");
-    vehicleControl.begin();
-
     DEBUG_PRINTLN("Initializing CAN Manager...");
     if (!canManager.begin()) {
         DEBUG_PRINTLN("FATAL: CAN Manager initialization failed!");
         while (1) { delay(1000); }
     }
+
+    // Set task handle for CAN ISR notification (must be done after task is created)
+    // This will be set later after CAN RX task is created
+
+    // Initialize Contactor Manager first (sets up contactor pins)
+    DEBUG_PRINTLN("Initializing Contactor Manager...");
+    contactorManager.begin(&bmsManager, &inputManager);
+
+    // Initialize StateManager (powers on BMS, waits 2s)
+    DEBUG_PRINTLN("Initializing State Manager...");
+    stateManager.begin(&bmsManager, &contactorManager);  // Pass BMS and Contactor manager pointers
+
+    // Now BMS is powered and ready - initialize BMS Manager (sends config)
+    DEBUG_PRINTLN("Initializing BMS Manager...");
+    bmsManager.begin(&canManager);
+    canManager.setBMSManager(&bmsManager);
+
+    DEBUG_PRINTLN("Initializing Vehicle Control...");
+    vehicleControl.begin(&bmsManager, &inputManager, &contactorManager);  // Pass all managers for safety
 #endif
 
     // Initialize Display Manager (works in both test and normal mode)
@@ -732,6 +1000,9 @@ void setup() {
     xTaskCreatePinnedToCore(taskCANRx, "CAN_RX", FreeRTOS::STACK_CAN_RX,
         NULL, FreeRTOS::PRIORITY_CAN_RX, &taskHandleCANRx, FreeRTOS::CORE_PROTOCOL);
 
+    // Set CAN RX task handle for ISR notification
+    canManager.canRxTaskHandle = taskHandleCANRx;
+
     xTaskCreatePinnedToCore(taskCANTx, "CAN_TX", FreeRTOS::STACK_CAN_TX,
         NULL, FreeRTOS::PRIORITY_CAN_TX, &taskHandleCANTx, FreeRTOS::CORE_PROTOCOL);
 
@@ -762,6 +1033,9 @@ void setup() {
     xTaskCreatePinnedToCore(taskTaskMonitor, "Monitor", FreeRTOS::STACK_MONITOR,
         NULL, FreeRTOS::PRIORITY_MONITOR, &taskHandleMonitor, FreeRTOS::CORE_APPLICATION);
 
+    xTaskCreatePinnedToCore(taskLEDControl, "LED", 2048,
+        NULL, 3, &taskHandleLED, FreeRTOS::CORE_APPLICATION);
+
     // Register tasks with monitor
 #if HARDWARE_TEST_MODE
     taskMonitor.registerTask(taskHandleSimData, "SimData", 500);
@@ -785,14 +1059,8 @@ void setup() {
     DEBUG_PRINTLN("  Tasks running on dual cores");
     DEBUG_PRINTLN("========================================\n");
 
-    // Check wakeup reason
-    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-    if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
-        DEBUG_PRINTLN("Woke up from START button");
-        stateManager.handleStartButton();
-    } else {
-        DEBUG_PRINTLN("Power-on reset");
-    }
+    // Handle wakeup - StateManager will transition to appropriate mode
+    stateManager.handleWakeup(wokeFromCharger);
 }
 
 //=============================================================================

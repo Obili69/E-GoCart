@@ -9,36 +9,55 @@
 // ESP32 PINOUT
 //-----------------------------------------------------------------------------
 namespace Pins {
-    // SPI (CAN Controller)
+    // SPI (CAN Controllers)
     constexpr uint8_t SPI_SCK  = 4;
     constexpr uint8_t SPI_MISO = 5;
     constexpr uint8_t SPI_MOSI = 6;
-    constexpr uint8_t CAN_CS   = 36;
-    constexpr uint8_t CAN_INT  = 37;
+
+    // CAN1 (DMC/Motor Controller - 500kbps) - MCP2515 via SPI
+    constexpr uint8_t CAN1_CS   = 36;
+    constexpr uint8_t CAN1_INT  = 37;
+
+    // CAN2 (BMS - 250kbps) - ESP32-S3 internal TWAI controller
+    constexpr uint8_t CAN2_TX   = 3;   // TWAI TX pin
+    constexpr uint8_t CAN2_RX   = 46;  // TWAI RX pin
+
+    // Legacy compatibility (CAN1 is primary)
+    constexpr uint8_t CAN_CS   = CAN1_CS;
+    constexpr uint8_t CAN_INT  = CAN1_INT;
     
     // I2C (MCP23017 + ADS1115)
     constexpr uint8_t SDA = 1;
     constexpr uint8_t SCL = 2;
     
     // Digital Inputs (Buttons/Switches)
-    constexpr uint8_t START_BUTTON      = 7;   // P1 - Wakeup Pin
-    constexpr uint8_t STOP_BUTTON       = 8;   // P2
+    constexpr uint8_t START_STOP_BUTTON = 7;   // P1 - Combined Start/Stop Button (2s=start/stop, 15s=reset)
     constexpr uint8_t CHARGER_WAKEUP    = 9;   // P3 - NLG Wakeup
-    constexpr uint8_t RESET_BUTTON      = 10;  // P4 - External Reset
     constexpr uint8_t IL_SWITCH         = 47;  // P5 - Interlock
-    
+
+    // Status LEDs
+    constexpr uint8_t STATUS_LED        = 21;  // Status LED (1Hz blink=startup, solid=running, 20Hz=error)
+    constexpr uint8_t DIRECTION_LED     = 16;  // Direction LED (solid=Drive, 1Hz=Reverse, off=Neutral)
+
     // Power Outputs (Relays/Contactors)
-    constexpr uint8_t WATER_PUMP        = 38;  // PWI0
-    constexpr uint8_t MAIN_CONTACTOR    = 11;  // LPWI0
-    constexpr uint8_t DMC_ENABLE        = 12;  // LWPI1
-    constexpr uint8_t NLG_ENABLE        = 13;  // LWPI2
-    constexpr uint8_t BMS_ENABLE        = 14;  // LWPI3
-    constexpr uint8_t PRECHARGE_RELAY   = 17;  // LWPI4
-    constexpr uint8_t NEXTION_POWER     = 18;  // LWPI5
+    constexpr uint8_t WATER_PUMP             = 38;  // PWI0
+    constexpr uint8_t BMS_PWR                = 11;  // LPWI0 - BMS main power
+    constexpr uint8_t DMC_ENABLE             = 12;  // LWPI1
+
+    // Charge Path Contactors
+    constexpr uint8_t CHARGE_PRECHARGE       = 17;  // LWPI4 - Charge path precharge relay
+    constexpr uint8_t MAIN_CHARGE_CONTACTOR  = 13;  // LWPI2 - Main charge contactor
+    constexpr uint8_t NLG_ENABLE             = 39;  // LWPI2 - Charger enable (same as charge contactor)
+
+    // Discharge Path Contactors
+    constexpr uint8_t DISCHARGE_PRECHARGE    = 14;  // LWPI3 - Discharge path precharge relay
+    constexpr uint8_t MAIN_DISCHARGE_CONTACTOR = 18; // LWPI5 - Main discharge contactor
+
+    constexpr uint8_t NEXTION_POWER          = 8;   // Changed from 18 - moved to available pin
     
     // Serial (Nextion Display)
-    constexpr uint8_t NEXTION_TX = 19;  // IO1
-    constexpr uint8_t NEXTION_RX = 20;  // IO2
+    constexpr uint8_t NEXTION_TX = 42;  // IO3
+    constexpr uint8_t NEXTION_RX = 41;  // IO4
     
     // MCP23017 Interrupts
     constexpr uint8_t MCP_INT_A = 45;  // INTA - Low Expansion
@@ -57,13 +76,15 @@ namespace I2C {
 // MCP23017 PIN MAPPING
 //-----------------------------------------------------------------------------
 namespace MCP {
+    // Port A (Low Expansion) - Safety Critical Inputs with Interrupt
+    constexpr uint8_t CHARGE_ALLOW     = 0;  // GPA0 - Charge allowance from BMS (SAFETY CRITICAL)
+    constexpr uint8_t DISCHARGE_ALLOW  = 1;  // GPA1 - Discharge allowance from BMS (SAFETY CRITICAL)
+    // GPA2-GPA7 unused
+
     // Port B (High Expansion) - Input Only
     constexpr uint8_t BRAKE_SWITCH      = 7;  // GPB7 (P0HE)
     constexpr uint8_t DIRECTION_TOGGLE  = 6;  // GPB6 (P1HE)
     // GPB5-GPB0 unused
-    
-    // Port A (Low Expansion) - Available for future use
-    // GPA0-GPA7 unused
 }
 
 //-----------------------------------------------------------------------------
@@ -76,12 +97,23 @@ namespace ADC {
 }
 
 //-----------------------------------------------------------------------------
+// CAN BUS CONFIGURATION
+//-----------------------------------------------------------------------------
+namespace CANBus {
+    // CAN1 - DMC/Motor Controller & Charger (fast)
+    constexpr uint16_t CAN1_SPEED_KBPS = 500;  // 500 kbps
+
+    // CAN2 - BMS (slower, polled)
+    constexpr uint16_t CAN2_SPEED_KBPS = 250;  // 250 kbps
+}
+
+//-----------------------------------------------------------------------------
 // CAN MESSAGE IDS
 //-----------------------------------------------------------------------------
 namespace CAN_ID {
-    // 192S BMS Messages (Extended Format, 500kbps)
-    constexpr uint32_t BMS_TX = 0xF5;  // BMS sends on 0xF5
-    constexpr uint32_t BMS_RX = 0xF4;  // We send commands on 0xF4
+    // 192S BMS Messages (29-bit Extended Format, 250kbps on CAN2)
+    constexpr uint32_t BMS_TX = 0xF5;  // BMS sends on 0xF5 (extended)
+    constexpr uint32_t BMS_RX = 0xF4;  // We send commands on 0xF4 (extended)
 
     // DMC Messages (Motor Controller)
     constexpr uint16_t DMC_CONTROL      = 0x210;
@@ -125,10 +157,13 @@ namespace Timing {
     constexpr uint32_t BUTTON_DEBOUNCE          = 50;
     constexpr uint32_t PRECHARGE_TIMEOUT        = 5000;   // 5 seconds
     constexpr uint32_t PRECHARGE_CHECK_INTERVAL = 100;    // Check every 100ms
-    constexpr uint32_t SLEEP_TIMEOUT            = 5000;   // 5 seconds after STOP
+    constexpr uint32_t PRECHARGE_DELAY_MS       = 3000;   // 3 second precharge time (from BMS config)
+    constexpr uint32_t SLEEP_TIMEOUT            = 500;    // 500ms after STOP
     constexpr uint32_t CAN_FAST_CYCLE           = 10;     // DMC control
     constexpr uint32_t CAN_SLOW_CYCLE           = 100;    // Status updates
     constexpr uint32_t DISPLAY_UPDATE           = 50;     // 20 Hz refresh
+    constexpr uint32_t CURRENT_ZERO_TIMEOUT     = 2000;   // 2 seconds to verify current = 0
+    constexpr uint32_t CURRENT_ZERO_CHECK_INTERVAL = 100; // Check every 100ms
 }
 
 //-----------------------------------------------------------------------------
@@ -136,47 +171,77 @@ namespace Timing {
 //-----------------------------------------------------------------------------
 namespace Battery {
     // Cell Configuration
-    constexpr uint8_t  NUM_CELLS            = 104;  // 104S LiPo pack
+    constexpr uint8_t  NUM_CELLS            = 104;  // 104S LiPo pack (set to 4 for testing)
+    constexpr uint8_t  NUM_CELLS_TESTING    = 4;    // Test configuration (4S)
     constexpr uint8_t  NUM_TEMP_SENSORS     = 16;   // 16 temperature modules
+    constexpr uint16_t CAPACITY_AH          = 16;   // 16 Ah pack capacity
 
     // Cell Voltage Limits (LiPo Chemistry)
     constexpr float    CELL_MIN_V           = 3.0f;   // Absolute minimum per cell
     constexpr float    CELL_MAX_V           = 4.2f;   // Absolute maximum per cell
     constexpr float    CELL_NOM_V           = 3.7f;   // Nominal voltage per cell
     constexpr float    CELL_STORAGE_V       = 3.8f;   // Storage voltage per cell
+    constexpr float    CELL_BALANCE_V       = 4.18f;  // Balance start voltage
 
     // Pack Voltage Limits (104S)
-    constexpr uint16_t MIN_VOLTAGE          = 312;    // 3.0V * 104S
+    constexpr uint16_t MIN_VOLTAGE          = 14;//312;    // 3.0V * 104S
     constexpr uint16_t MAX_VOLTAGE          = 437;    // 4.2V * 104S
     constexpr uint16_t NOM_VOLTAGE          = 385;    // 3.7V * 104S
     constexpr uint16_t PRECHARGE_TOLERANCE  = 20;     // ±20V for precharge complete
+
+    // Current Thresholds for Safety Checks
+    constexpr float CURRENT_ZERO_THRESHOLD  = 0.2f;  // ±0.5A considered "zero" for safety checks
+
+    // Current Limits
+    constexpr uint16_t MAX_DISCHARGE_CURRENT = 350;   // 350A max discharge
+    constexpr uint16_t MAX_CHARGE_CURRENT    = 50;    // 50A max charge
+
+    // Temperature Limits
+    constexpr float    MAX_TEMP_C           = 55.0f;  // Max operating temperature
+    constexpr float    MIN_TEMP_C           = 6.0f;   // Min operating temperature (cold protection)
 
     // Safety Limits
     constexpr uint8_t  MIN_SOC              = 10;     // Emergency cutoff at 10%
     constexpr float    MAX_CELL_DELTA       = 0.05f;  // Max voltage imbalance (V)
     constexpr uint32_t BMS_TIMEOUT_MS       = 1000;   // BMS message timeout
+
+    // BMS Configuration Settings
+    constexpr bool     BMS_AUTO_BALANCE     = true;   // Enable auto-balance during charging
+    constexpr bool     BMS_AUTO_RESET_CAP   = true;   // Auto-reset capacity counter
+    constexpr bool     BMS_ARM_ON_START     = true;   // Arm battery on startup
+    constexpr bool     BMS_CHANNEL_DEFAULT  = false;   // Channel default state (on after power-on)
+    constexpr uint16_t PRECHARGE_DELAY      = 3;
 }
 
 //-----------------------------------------------------------------------------
 // MOTOR PARAMETERS
 //-----------------------------------------------------------------------------
 namespace Motor {
-    constexpr int16_t MAX_TORQUE_NM      = 850;   // Forward max torque
-    constexpr int16_t MAX_REGEN_NM       = 420;   // Regen max torque
-    constexpr int16_t MAX_REVERSE_NM     = 200;   // Reverse max torque
-    constexpr int16_t MAX_RPM            = 6000;
+    constexpr int16_t MAX_TORQUE_NM      = 250;   // Forward max torque
+    constexpr int16_t MAX_REGEN_NM       = 100;   // Regen max torque
+    constexpr int16_t MAX_REVERSE_NM     = 60;   // Reverse max torque
+    constexpr int16_t MAX_RPM            = 30000;
     constexpr float   DEADZONE_PERCENT   = 2.0f;  // 2% deadzone around zero
-    
+
     // Transmission
     constexpr float GEAR_RATIO = 3.9f;
     constexpr float WHEEL_DIAMETER_M = 0.66f;  // 66cm diameter
-    
+
     // Torque curves (% of max torque at given RPM)
     // Speed zones: 0-1000, 1000-2000, 2000-4000, 4000-6000
-    constexpr float TORQUE_CURVE[] = {100.0f, 100.0f, 80.0f, 60.0f};
-    
+    constexpr float TORQUE_CURVE[] = {100.0f, 100.0f, 100.0f, 100.0f};
+
     // Regen curves (% of max regen at given RPM)
     constexpr float REGEN_CURVE[] = {20.0f, 40.0f, 60.0f, 80.0f};
+}
+
+//-----------------------------------------------------------------------------
+// COOLING SYSTEM PARAMETERS
+//-----------------------------------------------------------------------------
+namespace Cooling {
+    constexpr float PUMP_ON_TEMP_C       = 60.0f;  // Turn pump ON at 60°C
+    constexpr float PUMP_HYSTERESIS_C    = 15.0f;  // Turn pump OFF at 45°C (60 - 15)
+    constexpr float PUMP_OFF_TEMP_C      = PUMP_ON_TEMP_C - PUMP_HYSTERESIS_C;
 }
 
 //-----------------------------------------------------------------------------
@@ -234,17 +299,17 @@ namespace Safety {
 // FREERTOS CONFIGURATION
 //-----------------------------------------------------------------------------
 namespace FreeRTOS {
-    // Task stack sizes (bytes)
+    // Task stack sizes (bytes) - increased to prevent stack overflow
     constexpr uint32_t STACK_CAN_RX        = 4096;
-    constexpr uint32_t STACK_CAN_TX        = 3072;
-    constexpr uint32_t STACK_VEHICLE_CTRL  = 3072;
-    constexpr uint32_t STACK_STATE_MGR     = 3072;
-    constexpr uint32_t STACK_SAFETY        = 2048;
-    constexpr uint32_t STACK_INPUT         = 3072;
-    constexpr uint32_t STACK_DISPLAY       = 3072;
-    constexpr uint32_t STACK_WIFI          = 4096;
+    constexpr uint32_t STACK_CAN_TX        = 4096;  // Increased from 3072
+    constexpr uint32_t STACK_VEHICLE_CTRL  = 4096;  // Increased from 3072
+    constexpr uint32_t STACK_STATE_MGR     = 4096;  // Increased from 3072
+    constexpr uint32_t STACK_SAFETY        = 4096;  // Increased from 2048
+    constexpr uint32_t STACK_INPUT         = 4096;  // Increased from 3072
+    constexpr uint32_t STACK_DISPLAY       = 4096;  // Increased from 3072
+    constexpr uint32_t STACK_WIFI          = 6144;  // Increased from 4096
     constexpr uint32_t STACK_WEBSERVER     = 8192;
-    constexpr uint32_t STACK_MONITOR       = 2048;
+    constexpr uint32_t STACK_MONITOR       = 3072;  // Increased from 2048
 
     // Task priorities (0-24, higher = more priority)
     constexpr uint8_t PRIORITY_CAN_RX      = 24;  // Highest - time critical
@@ -319,15 +384,18 @@ namespace RuntimeConfig {
 #define DEBUG_CAN_MESSAGES  0  // Log all CAN messages
 #define DEBUG_STATE_MACHINE 1  // Log state transitions
 #define DEBUG_FREERTOS      0  // Log FreeRTOS task info
-#define DEBUG_WIFI          1  // Log WiFi events
+#define DEBUG_WIFI          0  // Log WiFi events
 #define DEBUG_WEBSERVER     0  // Log web requests
-
+#define UPLOAD_BMS_CONFIG   0  // UPLOAD BMS param over CAN
 // Debug Mode (prevents sleep, keeps WiFi always on)
-#define DEBUG_MODE          1  // 1 = Debug mode, 0 = Production mode
+#define DEBUG_MODE          0  // 1 = Debug mode, 0 = Production mode
 
 // Hardware-less Test Mode (bypass hardware init, simulate telemetry)
 // Set to 1 to test webserver without physical hardware connected
-#define HARDWARE_TEST_MODE  1  // 1 = Simulated data, 0 = Real hardware
+#define HARDWARE_TEST_MODE  0  // 1 = Simulated data, 0 = Real hardware
+
+// CAN2 (BMS) - Set to 0 if CAN2 hardware not yet connected
+#define ENABLE_CAN2         1  // 1 = CAN2 enabled, 0 = CAN2 disabled (optional)
 
 #if DEBUG_SERIAL
     #define DEBUG_PRINT(x)   Serial.print(x)

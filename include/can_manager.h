@@ -2,14 +2,19 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <mcp2515_can.h>
+#include <driver/twai.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include "config.h"
 #include "data_structures.h"
 
+// Forward declaration
+class BMSManager;
+
 //=============================================================================
-// CAN MANAGER - FreeRTOS Version
-// Handles: BMS, DMC, NLG communication with interrupt-driven RX
+// CAN MANAGER - Dual CAN Bus FreeRTOS Version
+// CAN1 (500kbps, MCP2515): DMC Motor Controller, NLG Charger
+// CAN2 (250kbps, ESP32 TWAI): BMS Battery Management System
 //=============================================================================
 
 // Note: BMSData, DMCData, NLGData are now defined in data_structures.h
@@ -27,6 +32,12 @@ public:
      * @return true if initialization successful
      */
     bool begin();
+
+    /**
+     * @brief Set BMS manager for routing BMS messages
+     * @param bmsMgr Pointer to BMSManager
+     */
+    void setBMSManager(BMSManager* bmsMgr);
 
     /**
      * @brief Process incoming messages from queue (call from CAN RX task)
@@ -69,6 +80,18 @@ public:
     // in data_structures.h
 
     // -------------------------------------------------------------------------
+    // BMS CONTROL (Thread-safe)
+    // -------------------------------------------------------------------------
+    /**
+     * @brief Send message on CAN2 (BMS bus)
+     * @param id CAN message ID
+     * @param len Data length (0-8)
+     * @param data Data buffer
+     * @return true if sent successfully
+     */
+    bool sendCAN2Message(uint32_t id, uint8_t len, const uint8_t* data);
+
+    // -------------------------------------------------------------------------
     // STATUS QUERIES
     // -------------------------------------------------------------------------
     bool isBMSAlive() const;
@@ -85,10 +108,18 @@ public:
      */
     static void setInstance(CANManager* instance) { _instance = instance; }
 
+    // Task handle for notification from ISR (public so main.cpp can set it)
+    TaskHandle_t canRxTaskHandle;
+
 private:
-    // Hardware
-    mcp2515_can CAN;
+    // Hardware - Dual CAN buses
+    mcp2515_can CAN1;  // DMC + NLG (500kbps, MCP2515 via SPI)
+    // CAN2 uses ESP32-S3 internal TWAI controller (no object needed)
     SPIClass* spi;
+    bool twaiInitialized;
+
+    // BMS Manager for routing BMS messages
+    BMSManager* bmsManager;
 
     // Local copies of data (updated from shared data)
     BMSData bmsData;
@@ -118,6 +149,7 @@ private:
 
     // Helper functions
     void resetBuffers();
-    void readCANMessage();  // Called from ISR to push message to queue
-    bool sendCANMessage(uint32_t id, uint8_t len, const uint8_t* data);
+    void readCAN1Message();  // Called from task to read CAN1 messages
+    void pollCAN2();         // Polled BMS messages (no interrupt)
+    bool sendCAN1Message(uint32_t id, uint8_t len, const uint8_t* data);
 };

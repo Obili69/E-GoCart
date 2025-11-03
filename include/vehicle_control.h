@@ -2,6 +2,11 @@
 #include <Arduino.h>
 #include "config.h"
 
+// Forward declarations
+class BMSManager;
+class InputManager;
+class ContactorManager;
+
 //=============================================================================
 // VEHICLE CONTROL
 // Handles: Torque calculation, direction control, safety logic
@@ -13,8 +18,11 @@ public:
     
     /**
      * @brief Initialize vehicle control
+     * @param bmsMgr Pointer to BMSManager for display control (optional)
+     * @param inputMgr Pointer to InputManager for safety monitoring (optional)
+     * @param contactorMgr Pointer to ContactorManager for emergency shutdown (optional)
      */
-    void begin();
+    void begin(BMSManager* bmsMgr = nullptr, InputManager* inputMgr = nullptr, ContactorManager* contactorMgr = nullptr);
     
     /**
      * @brief Update control logic (call in loop)
@@ -33,7 +41,8 @@ public:
     // -------------------------------------------------------------------------
     // DIRECTION CONTROL
     // -------------------------------------------------------------------------
-    void handleDirectionToggle();  // Call when direction button pressed
+    void handleDirectionToggle();  // Call when direction button pressed (short press toggles D/R)
+    void setNeutral();             // Set gear to Neutral (long hold)
     GearState getCurrentGear() const { return currentGear; }
     
     // -------------------------------------------------------------------------
@@ -54,18 +63,26 @@ private:
     // Current state
     GearState currentGear;
     bool systemReady;
-    
+
     // Inputs
     float throttleInput;    // 0-100%
     float regenInput;       // 0-100%
     bool brakePressed;
     float motorSpeedRPM;
-    
+
     // Output
     int16_t torqueDemand;   // Nm
-    
+
+    // Manager references
+    BMSManager* bmsManager;
+    InputManager* inputManager;
+    ContactorManager* contactorManager;
+
     // Timing
     unsigned long lastUpdateTime;
+
+    // Helper to update BMS display based on gear
+    void updateBMSDisplay();
     
     // Torque calculation
     int16_t calculateTorque();
@@ -75,4 +92,9 @@ private:
     // Safety checks
     bool isSafeToApplyTorque();
     void applyDeadzone(int16_t& torque);
+    void checkDischargeAllowance();  // Monitor discharge allowance during driving
+    void checkChargeAllowance();     // Monitor charge allowance for regen
+
+    // Safety state
+    bool regenEnabled;               // Regen can be disabled if charge not allowed
 };

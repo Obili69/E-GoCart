@@ -82,6 +82,10 @@ void WebServer::setupRoutes() {
         this->handleGetTelemetry(request);
     });
 
+    server.on("/api/errors", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        this->handleGetErrors(request);
+    });
+
     server.on("/api/config", HTTP_GET, [this](AsyncWebServerRequest *request) {
         this->handleGetConfig(request);
     });
@@ -254,6 +258,11 @@ void WebServer::handleRoot(AsyncWebServerRequest *request) {
 
 void WebServer::handleGetTelemetry(AsyncWebServerRequest *request) {
     String json = getTelemetryJSON();
+    request->send(200, "application/json", json);
+}
+
+void WebServer::handleGetErrors(AsyncWebServerRequest *request) {
+    String json = getErrorsJSON();
     request->send(200, "application/json", json);
 }
 
@@ -527,6 +536,100 @@ String WebServer::getConfigJSON() {
     // Debug
     doc["debugMode"] = config.debugMode;
     doc["enableOTA"] = config.enableOTA;
+
+    String output;
+    serializeJson(doc, output);
+    return output;
+}
+
+String WebServer::getErrorsJSON() {
+    SystemErrorStatus errorStatus = sharedErrorStatus.get();
+
+    // Use DynamicJsonDocument for larger error JSON (50+ error entries)
+    DynamicJsonDocument doc(4096);
+
+    // Summary counters
+    doc["criticalCount"] = errorStatus.criticalCount;
+    doc["warningCount"] = errorStatus.warningCount;
+    doc["infoCount"] = errorStatus.infoCount;
+    doc["hasAnyError"] = errorStatus.hasAnyError;
+
+    // Helper lambda to add error entry to array
+    auto addError = [](JsonArray& arr, const ErrorEntry& err, const char* subsystem) {
+        if (err.active) {
+            JsonObject obj = arr.createNestedObject();
+            obj["code"] = err.code;
+            obj["message"] = err.message;
+            obj["severity"] = (uint8_t)err.severity;  // 0=INFO, 1=WARNING, 2=CRITICAL
+            obj["subsystem"] = subsystem;
+            obj["timestamp"] = err.timestamp;
+        }
+    };
+
+    // Create error array
+    JsonArray errors = doc.createNestedArray("errors");
+
+    // BMS errors
+    addError(errors, errorStatus.bmsOverTemp, "BMS");
+    addError(errors, errorStatus.bmsOverCharge, "BMS");
+    addError(errors, errorStatus.bmsCellError, "BMS");
+    addError(errors, errorStatus.bmsOverCurrent, "BMS");
+    addError(errors, errorStatus.bmsOverDischarge, "BMS");
+    addError(errors, errorStatus.bmsTempNegative, "BMS");
+    addError(errors, errorStatus.bmsTimeout, "BMS");
+    addError(errors, errorStatus.bmsChargeMOSDisabled, "BMS");
+    addError(errors, errorStatus.bmsDischargeMOSDisabled, "BMS");
+
+    // Charger errors
+    addError(errors, errorStatus.chargerMainsFuse, "Charger");
+    addError(errors, errorStatus.chargerOutputFuse, "Charger");
+    addError(errors, errorStatus.chargerShortCircuit, "Charger");
+    addError(errors, errorStatus.chargerMainsOV, "Charger");
+    addError(errors, errorStatus.chargerBatteryOV, "Charger");
+    addError(errors, errorStatus.chargerPolarity, "Charger");
+    addError(errors, errorStatus.chargerCANTimeout, "Charger");
+    addError(errors, errorStatus.chargerCANOff, "Charger");
+    addError(errors, errorStatus.chargerTempSensor, "Charger");
+    addError(errors, errorStatus.chargerCRCError, "Charger");
+    addError(errors, errorStatus.chargerTimeout, "Charger");
+    addError(errors, errorStatus.chargerLowMainsV, "Charger");
+    addError(errors, errorStatus.chargerLowBattV, "Charger");
+    addError(errors, errorStatus.chargerHighTemp, "Charger");
+    addError(errors, errorStatus.chargerControlOOR, "Charger");
+
+    // DMC/Inverter errors
+    addError(errors, errorStatus.dmcCANTimeout, "Inverter");
+    addError(errors, errorStatus.dmcInverterOvertemp, "Inverter");
+    addError(errors, errorStatus.dmcMotorOvertemp, "Inverter");
+    addError(errors, errorStatus.dmcSpeedSensor, "Inverter");
+    addError(errors, errorStatus.dmcUndervoltage, "Inverter");
+    addError(errors, errorStatus.dmcOvervoltage, "Inverter");
+    addError(errors, errorStatus.dmcDCCurrentError, "Inverter");
+    addError(errors, errorStatus.dmcInitError, "Inverter");
+    addError(errors, errorStatus.dmcShortCircuit, "Inverter");
+    addError(errors, errorStatus.dmcACOvercurrent, "Inverter");
+    addError(errors, errorStatus.dmcTimeout, "Inverter");
+    addError(errors, errorStatus.dmcSpeedSensorSupply, "Inverter");
+    addError(errors, errorStatus.dmcLimitsInvalid, "Inverter");
+    addError(errors, errorStatus.dmcControlInvalid, "Inverter");
+    addError(errors, errorStatus.dmcVoltageMeas, "Inverter");
+    addError(errors, errorStatus.dmcEEPROMError, "Inverter");
+    addError(errors, errorStatus.dmcStorageError, "Inverter");
+    addError(errors, errorStatus.dmcGeneralWarning, "Inverter");
+    addError(errors, errorStatus.dmcHVUndervoltage, "Inverter");
+    addError(errors, errorStatus.dmcTempSensorWarning, "Inverter");
+
+    // VCU/System errors
+    addError(errors, errorStatus.vcuContactorError, "VCU");
+    addError(errors, errorStatus.vcuEmergencyStop, "VCU");
+    addError(errors, errorStatus.vcuPrechargeTimeout, "VCU");
+    addError(errors, errorStatus.vcuMotorOvertemp, "VCU");
+    addError(errors, errorStatus.vcuInverterOvertemp, "VCU");
+    addError(errors, errorStatus.vcuBatteryOvertemp, "VCU");
+    addError(errors, errorStatus.vcuLowVoltage, "VCU");
+    addError(errors, errorStatus.vcuLowSOC, "VCU");
+    addError(errors, errorStatus.vcuCellCritical, "VCU");
+    addError(errors, errorStatus.vcuInterlock, "VCU");
 
     String output;
     serializeJson(doc, output);

@@ -404,6 +404,109 @@ void BMSManager::getChargingLimits(float& maxVoltage, float& maxCurrent, float& 
     }
 }
 
+void BMSManager::populateErrorStatus(SystemErrorStatus& status) {
+    unsigned long now = millis();
+
+    // BMS Over Temperature
+    if (data.overTemp) {
+        status.bmsOverTemp.code = "BMS_OVERTEMP";
+        status.bmsOverTemp.message = "Battery over-temperature detected";
+        status.bmsOverTemp.severity = ErrorSeverity::CRITICAL;
+        status.bmsOverTemp.active = true;
+        if (status.bmsOverTemp.timestamp == 0) status.bmsOverTemp.timestamp = now;
+    } else {
+        status.bmsOverTemp.active = false;
+    }
+
+    // BMS Over Charge
+    if (data.overCharge) {
+        status.bmsOverCharge.code = "BMS_OVERCHARGE";
+        status.bmsOverCharge.message = "Battery over-charging detected";
+        status.bmsOverCharge.severity = ErrorSeverity::CRITICAL;
+        status.bmsOverCharge.active = true;
+        if (status.bmsOverCharge.timestamp == 0) status.bmsOverCharge.timestamp = now;
+    } else {
+        status.bmsOverCharge.active = false;
+    }
+
+    // BMS Cell Error
+    if (data.cellError) {
+        status.bmsCellError.code = "BMS_CELL_ERROR";
+        status.bmsCellError.message = "Battery cell/string error detected";
+        status.bmsCellError.severity = ErrorSeverity::CRITICAL;
+        status.bmsCellError.active = true;
+        if (status.bmsCellError.timestamp == 0) status.bmsCellError.timestamp = now;
+    } else {
+        status.bmsCellError.active = false;
+    }
+
+    // BMS Over Current
+    if (data.overCurrent) {
+        status.bmsOverCurrent.code = "BMS_OVERCURRENT";
+        status.bmsOverCurrent.message = "Battery discharge over-current";
+        status.bmsOverCurrent.severity = ErrorSeverity::CRITICAL;
+        status.bmsOverCurrent.active = true;
+        if (status.bmsOverCurrent.timestamp == 0) status.bmsOverCurrent.timestamp = now;
+    } else {
+        status.bmsOverCurrent.active = false;
+    }
+
+    // BMS Over Discharge
+    if (data.overDischarge) {
+        status.bmsOverDischarge.code = "BMS_OVERDISCHARGE";
+        status.bmsOverDischarge.message = "Battery over-discharge detected";
+        status.bmsOverDischarge.severity = ErrorSeverity::CRITICAL;
+        status.bmsOverDischarge.active = true;
+        if (status.bmsOverDischarge.timestamp == 0) status.bmsOverDischarge.timestamp = now;
+    } else {
+        status.bmsOverDischarge.active = false;
+    }
+
+    // BMS Temperature Negative
+    if (data.tempNegative) {
+        status.bmsTempNegative.code = "BMS_TEMP_NEGATIVE";
+        status.bmsTempNegative.message = "Battery temperature below zero";
+        status.bmsTempNegative.severity = ErrorSeverity::WARNING;
+        status.bmsTempNegative.active = true;
+        if (status.bmsTempNegative.timestamp == 0) status.bmsTempNegative.timestamp = now;
+    } else {
+        status.bmsTempNegative.active = false;
+    }
+
+    // BMS Communication Timeout
+    if (!isAlive()) {
+        status.bmsTimeout.code = "BMS_TIMEOUT";
+        status.bmsTimeout.message = "BMS communication lost";
+        status.bmsTimeout.severity = ErrorSeverity::CRITICAL;
+        status.bmsTimeout.active = true;
+        if (status.bmsTimeout.timestamp == 0) status.bmsTimeout.timestamp = now;
+    } else {
+        status.bmsTimeout.active = false;
+    }
+
+    // BMS Charge MOS Disabled
+    if (!data.chargeMOSEnabled) {
+        status.bmsChargeMOSDisabled.code = "BMS_CHARGE_MOS_OFF";
+        status.bmsChargeMOSDisabled.message = "BMS charge MOS disabled";
+        status.bmsChargeMOSDisabled.severity = ErrorSeverity::WARNING;
+        status.bmsChargeMOSDisabled.active = true;
+        if (status.bmsChargeMOSDisabled.timestamp == 0) status.bmsChargeMOSDisabled.timestamp = now;
+    } else {
+        status.bmsChargeMOSDisabled.active = false;
+    }
+
+    // BMS Discharge MOS Disabled
+    if (!data.dischargeMOSEnabled) {
+        status.bmsDischargeMOSDisabled.code = "BMS_DISCHARGE_MOS_OFF";
+        status.bmsDischargeMOSDisabled.message = "BMS discharge MOS disabled";
+        status.bmsDischargeMOSDisabled.severity = ErrorSeverity::WARNING;
+        status.bmsDischargeMOSDisabled.active = true;
+        if (status.bmsDischargeMOSDisabled.timestamp == 0) status.bmsDischargeMOSDisabled.timestamp = now;
+    } else {
+        status.bmsDischargeMOSDisabled.active = false;
+    }
+}
+
 //=============================================================================
 // SEND COMMAND TO BMS
 //=============================================================================

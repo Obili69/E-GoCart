@@ -124,6 +124,12 @@ public:
     float getCurrentAmps() const { return data.packCurrent * 0.01f; }
 
     /**
+     * @brief Populate system error status with BMS errors
+     * @param status SystemErrorStatus structure to populate
+     */
+    void populateErrorStatus(SystemErrorStatus& status);
+
+    /**
      * @brief Check if current is within zero threshold
      * @return true if |current| < Battery::CURRENT_ZERO_THRESHOLD
      */

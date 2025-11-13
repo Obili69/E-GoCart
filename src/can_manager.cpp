@@ -1,5 +1,6 @@
 #include "can_manager.h"
 #include "bms_manager.h"
+#include "nlg5_manager.h"
 
 // Static instance for ISR
 CANManager* CANManager::_instance = nullptr;
@@ -9,10 +10,13 @@ CANManager::CANManager()
     , spi(nullptr)
     , twaiInitialized(false)
     , bmsManager(nullptr)
+    , nlg5Manager(nullptr)
     , lastBMSTime(0)
     , lastSlowCycleTime(0)
     , spiMutex(nullptr)
     , canRxTaskHandle(nullptr)
+    , errorClearActive(false)
+    , errorClearSetTime(0)
 {
     resetBuffers();
 
@@ -128,6 +132,11 @@ void CANManager::setBMSManager(BMSManager* bmsMgr) {
     DEBUG_PRINTLN("CANManager: BMS Manager linked");
 }
 
+void CANManager::setNLG5Manager(NLG5Manager* nlg5Mgr) {
+    nlg5Manager = nlg5Mgr;
+    DEBUG_PRINTLN("CANManager: NLG5 Manager linked");
+}
+
 void IRAM_ATTR CANManager::canISR() {
     // Minimal ISR - just notify the task to wake up and read the message
     if (_instance != nullptr && _instance->canRxTaskHandle != nullptr) {
@@ -224,7 +233,8 @@ void CANManager::processCANMessage(const CANMessage& msg) {
     }
     else if (msg.id == CAN_ID::DMC_STATUS ||
              msg.id == CAN_ID::DMC_POWER ||
-             msg.id == CAN_ID::DMC_TEMPERATURE) {
+             msg.id == CAN_ID::DMC_TEMPERATURE ||
+             msg.id == CAN_ID::DMC_ERR) {
         processDMCMessage(msg.id, msg.data, msg.len);
     }
     else if (msg.id == CAN_ID::NLG5_ST ||
@@ -328,6 +338,36 @@ void CANManager::processDMCMessage(uint32_t id, const uint8_t* buf, uint8_t len)
                 sharedDMCData.set(dmcData);
             }
             break;
+
+        case CAN_ID::DMC_ERR:  // 0x25A - Error/Warning flags
+            if (len >= 8) {
+                // Parse 64-bit error word from 8 bytes
+                dmcData.errorBits = ((uint64_t)buf[0] << 0) |
+                                   ((uint64_t)buf[1] << 8) |
+                                   ((uint64_t)buf[2] << 16) |
+                                   ((uint64_t)buf[3] << 24) |
+                                   ((uint64_t)buf[4] << 32) |
+                                   ((uint64_t)buf[5] << 40) |
+                                   ((uint64_t)buf[6] << 48) |
+                                   ((uint64_t)buf[7] << 56);
+
+                // Check if any errors are active (bits 0-47 are errors, 50-60 are warnings)
+                // Exclude info bits (bit 1 = general error flag)
+                uint64_t criticalMask = 0x0000FFFFFFFFFFFFULL;  // Bits 0-47
+                uint64_t warningMask = 0x1FFC000000000000ULL;   // Bits 50-60
+                dmcData.errorActive = ((dmcData.errorBits & criticalMask) != 0) ||
+                                     ((dmcData.errorBits & warningMask) != 0);
+
+                if (dmcData.errorActive) {
+                    dmcData.lastErrorTime = millis();
+#if DEBUG_CAN_MESSAGES
+                    DEBUG_PRINTF("DMC ERR: 0x%llX\n", dmcData.errorBits);
+#endif
+                }
+
+                sharedDMCData.set(dmcData);
+            }
+            break;
     }
 }
 
@@ -336,6 +376,12 @@ void CANManager::processDMCMessage(uint32_t id, const uint8_t* buf, uint8_t len)
 //=============================================================================
 
 void CANManager::processNLGMessage(uint32_t id, const uint8_t* buf, uint8_t len) {
+    // Route to NLG5Manager if available
+    if (nlg5Manager != nullptr) {
+        nlg5Manager->processMessage(id, buf, len);
+    }
+
+    // Also update basic shared data for legacy code
     switch (id) {
         case CAN_ID::NLG5_ST:
             if (len >= 4) {
@@ -412,19 +458,51 @@ void CANManager::sendDMCLimits() {
 // NLG CONTROL
 //=============================================================================
 
-void CANManager::sendNLGControl(uint8_t stateDemand) {
+void CANManager::sendNLGControl(uint8_t stateDemand, bool enableCharger, bool clearErrors) {
     BMSData bms = sharedBMSData.get();
 
     memset(nlgControlBuffer, 0, 8);
 
+    // Handle error clear bit cycling with 100ms minimum duration
+    uint8_t clearErrorBit = 0;
+    if (clearErrors) {
+        if (!errorClearActive) {
+            // Start error clear cycle - set bit to 1
+            errorClearActive = true;
+            errorClearSetTime = millis();
+            clearErrorBit = 1;
+        } else if (millis() - errorClearSetTime >= 100) {
+            // 100ms elapsed, clear the bit back to 0
+            errorClearActive = false;
+            clearErrorBit = 0;
+        } else {
+            // Still within 100ms window, keep bit at 1
+            clearErrorBit = 1;
+        }
+    } else {
+        // Not clearing errors, ensure state is reset
+        errorClearActive = false;
+        clearErrorBit = 0;
+    }
+
+    // Byte 0: Control bits and voltage high bits
+    // Bit 0: C_C_EN (enable charger)
+    // Bit 1: C_C_EL (clear errors)
+    // Bits 2-4: Reserved (0)
+    // Bits 5-7: Voltage high bits (bits 10-8)
     uint16_t voltageScaled = Battery::MAX_VOLTAGE * 10;
-    nlgControlBuffer[0] = (0 << 7) | (0 << 6) | (0 << 5) | ((voltageScaled >> 8) & 0x1F);
+    nlgControlBuffer[0] = ((enableCharger ? 1 : 0) << 0) |
+                          (clearErrorBit << 1) |
+                          (0 << 2) | (0 << 3) | (0 << 4) |
+                          ((voltageScaled >> 8) & 0x1F);
     nlgControlBuffer[1] = voltageScaled & 0xFF;
 
+    // Byte 2-3: State demand and current
     uint16_t currentScaled = (bms.maxCharge + 102.4f) * 10;
     nlgControlBuffer[2] = (stateDemand << 5) | ((currentScaled >> 8) & 0x07);
     nlgControlBuffer[3] = currentScaled & 0xFF;
 
+    // Byte 4-5: AC current limit
     uint16_t acCurrentScaled = (32 + 102.4f) * 10;
     nlgControlBuffer[4] = (0 << 4) | ((acCurrentScaled >> 8) & 0x07);
     nlgControlBuffer[5] = acCurrentScaled & 0xFF;
@@ -435,7 +513,7 @@ void CANManager::sendNLGControl(uint8_t stateDemand) {
     sendCAN1Message(CAN_ID::NLG5_CTL, 8, nlgControlBuffer);
 
 #if DEBUG_CAN_MESSAGES
-    DEBUG_PRINTF("NLG TX: State=%d\n", stateDemand);
+    DEBUG_PRINTF("NLG TX: State=%d, EN=%d, CLR=%d\n", stateDemand, enableCharger, clearErrorBit);
 #endif
 }
 
@@ -457,6 +535,181 @@ bool CANManager::isCharging() const {
     // NLG state values: 0=idle, 1-7=various charging states
     // Consider charging if state > 0
     return (nlg.state > 0 && nlg.state < 7);
+}
+
+//=============================================================================
+// DMC ERROR REPORTING
+//=============================================================================
+
+void CANManager::populateDMCErrorStatus(SystemErrorStatus& status) {
+    unsigned long now = millis();
+
+    // Get current DMC data
+    DMCData dmc = sharedDMCData.get();
+
+    // Critical Errors (E_ prefix) - bits from DBC file
+    // Bit 0: CAN control message lost
+    status.dmcCANTimeout.active = (dmc.errorBits & (1ULL << 0)) != 0;
+    if (status.dmcCANTimeout.active) {
+        status.dmcCANTimeout.code = "DMC_CAN_CTRL_LOST";
+        status.dmcCANTimeout.message = "CAN control message timeout";
+        status.dmcCANTimeout.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcCANTimeout.timestamp == 0) status.dmcCANTimeout.timestamp = now;
+    }
+
+    // Bit 1: Inverter temperature
+    status.dmcInverterOvertemp.active = (dmc.errorBits & (1ULL << 1)) != 0;
+    if (status.dmcInverterOvertemp.active) {
+        status.dmcInverterOvertemp.code = "DMC_TEMP_INV";
+        status.dmcInverterOvertemp.message = "Inverter overtemperature";
+        status.dmcInverterOvertemp.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcInverterOvertemp.timestamp == 0) status.dmcInverterOvertemp.timestamp = now;
+    }
+
+    // Bit 2: Motor temperature
+    status.dmcMotorOvertemp.active = (dmc.errorBits & (1ULL << 2)) != 0;
+    if (status.dmcMotorOvertemp.active) {
+        status.dmcMotorOvertemp.code = "DMC_TEMP_MOT";
+        status.dmcMotorOvertemp.message = "Motor overtemperature";
+        status.dmcMotorOvertemp.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcMotorOvertemp.timestamp == 0) status.dmcMotorOvertemp.timestamp = now;
+    }
+
+    // Bit 3: Speed error
+    status.dmcSpeedSensor.active = (dmc.errorBits & (1ULL << 3)) != 0;
+    if (status.dmcSpeedSensor.active) {
+        status.dmcSpeedSensor.code = "DMC_SPEED";
+        status.dmcSpeedSensor.message = "Motor overspeed error";
+        status.dmcSpeedSensor.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcSpeedSensor.timestamp == 0) status.dmcSpeedSensor.timestamp = now;
+    }
+
+    // Bit 4: DC undervoltage
+    status.dmcUndervoltage.active = (dmc.errorBits & (1ULL << 4)) != 0;
+    if (status.dmcUndervoltage.active) {
+        status.dmcUndervoltage.code = "DMC_UV";
+        status.dmcUndervoltage.message = "DC bus undervoltage";
+        status.dmcUndervoltage.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcUndervoltage.timestamp == 0) status.dmcUndervoltage.timestamp = now;
+    }
+
+    // Bit 5: DC overvoltage
+    status.dmcOvervoltage.active = (dmc.errorBits & (1ULL << 5)) != 0;
+    if (status.dmcOvervoltage.active) {
+        status.dmcOvervoltage.code = "DMC_OV";
+        status.dmcOvervoltage.message = "DC bus overvoltage";
+        status.dmcOvervoltage.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcOvervoltage.timestamp == 0) status.dmcOvervoltage.timestamp = now;
+    }
+
+    // Bit 6: DC current
+    status.dmcDCCurrentError.active = (dmc.errorBits & (1ULL << 6)) != 0;
+    if (status.dmcDCCurrentError.active) {
+        status.dmcDCCurrentError.code = "DMC_DC_CURR";
+        status.dmcDCCurrentError.message = "DC current measurement error";
+        status.dmcDCCurrentError.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcDCCurrentError.timestamp == 0) status.dmcDCCurrentError.timestamp = now;
+    }
+
+    // Bit 7: Initialization
+    status.dmcInitError.active = (dmc.errorBits & (1ULL << 7)) != 0;
+    if (status.dmcInitError.active) {
+        status.dmcInitError.code = "DMC_INIT";
+        status.dmcInitError.message = "Initialization error";
+        status.dmcInitError.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcInitError.timestamp == 0) status.dmcInitError.timestamp = now;
+    }
+
+    // Bit 8: Speed sensor supply
+    status.dmcSpeedSensorSupply.active = (dmc.errorBits & (1ULL << 8)) != 0;
+    if (status.dmcSpeedSensorSupply.active) {
+        status.dmcSpeedSensorSupply.code = "DMC_SPD_SENS_SUPPLY";
+        status.dmcSpeedSensorSupply.message = "Speed sensor supply error";
+        status.dmcSpeedSensorSupply.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcSpeedSensorSupply.timestamp == 0) status.dmcSpeedSensorSupply.timestamp = now;
+    }
+
+    // Bit 10: CAN limits invalid
+    status.dmcLimitsInvalid.active = (dmc.errorBits & (1ULL << 10)) != 0;
+    if (status.dmcLimitsInvalid.active) {
+        status.dmcLimitsInvalid.code = "DMC_CAN_LIM_INVALID";
+        status.dmcLimitsInvalid.message = "CAN limits message invalid";
+        status.dmcLimitsInvalid.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcLimitsInvalid.timestamp == 0) status.dmcLimitsInvalid.timestamp = now;
+    }
+
+    // Bit 11: CAN control invalid
+    status.dmcControlInvalid.active = (dmc.errorBits & (1ULL << 11)) != 0;
+    if (status.dmcControlInvalid.active) {
+        status.dmcControlInvalid.code = "DMC_CAN_CTRL_INVALID";
+        status.dmcControlInvalid.message = "CAN control message invalid";
+        status.dmcControlInvalid.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcControlInvalid.timestamp == 0) status.dmcControlInvalid.timestamp = now;
+    }
+
+    // Bit 14: Voltage measurement
+    status.dmcVoltageMeas.active = (dmc.errorBits & (1ULL << 14)) != 0;
+    if (status.dmcVoltageMeas.active) {
+        status.dmcVoltageMeas.code = "DMC_VLT_MEAS";
+        status.dmcVoltageMeas.message = "Voltage measurement error";
+        status.dmcVoltageMeas.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcVoltageMeas.timestamp == 0) status.dmcVoltageMeas.timestamp = now;
+    }
+
+    // Bit 15: Short circuit
+    status.dmcShortCircuit.active = (dmc.errorBits & (1ULL << 15)) != 0;
+    if (status.dmcShortCircuit.active) {
+        status.dmcShortCircuit.code = "DMC_SHORT_CIRCUIT";
+        status.dmcShortCircuit.message = "Short circuit detected";
+        status.dmcShortCircuit.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcShortCircuit.timestamp == 0) status.dmcShortCircuit.timestamp = now;
+    }
+
+    // Bit 33: Motor EEPROM
+    status.dmcEEPROMError.active = (dmc.errorBits & (1ULL << 33)) != 0;
+    if (status.dmcEEPROMError.active) {
+        status.dmcEEPROMError.code = "DMC_MOT_EEPROM";
+        status.dmcEEPROMError.message = "Motor EEPROM error";
+        status.dmcEEPROMError.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcEEPROMError.timestamp == 0) status.dmcEEPROMError.timestamp = now;
+    }
+
+    // Bit 34: Storage error
+    status.dmcStorageError.active = (dmc.errorBits & (1ULL << 34)) != 0;
+    if (status.dmcStorageError.active) {
+        status.dmcStorageError.code = "DMC_STORAGE";
+        status.dmcStorageError.message = "Internal storage error";
+        status.dmcStorageError.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcStorageError.timestamp == 0) status.dmcStorageError.timestamp = now;
+    }
+
+    // Bit 38: AC overcurrent
+    status.dmcACOvercurrent.active = (dmc.errorBits & (1ULL << 38)) != 0;
+    if (status.dmcACOvercurrent.active) {
+        status.dmcACOvercurrent.code = "DMC_AC_OVERCURR";
+        status.dmcACOvercurrent.message = "AC overcurrent detected";
+        status.dmcACOvercurrent.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcACOvercurrent.timestamp == 0) status.dmcACOvercurrent.timestamp = now;
+    }
+
+    // Warnings
+    // Bit 53: HV undervoltage warning
+    status.dmcHVUndervoltage.active = (dmc.errorBits & (1ULL << 53)) != 0;
+    if (status.dmcHVUndervoltage.active) {
+        status.dmcHVUndervoltage.code = "DMC_HV_UV_WARN";
+        status.dmcHVUndervoltage.message = "High voltage undervoltage warning";
+        status.dmcHVUndervoltage.severity = ErrorSeverity::WARNING;
+        if (status.dmcHVUndervoltage.timestamp == 0) status.dmcHVUndervoltage.timestamp = now;
+    }
+
+    // Bit 55: Temperature sensor warning
+    status.dmcTempSensorWarning.active = (dmc.errorBits & (1ULL << 55)) != 0;
+    if (status.dmcTempSensorWarning.active) {
+        status.dmcTempSensorWarning.code = "DMC_TEMP_SENSOR_WARN";
+        status.dmcTempSensorWarning.message = "Temperature sensor warning";
+        status.dmcTempSensorWarning.severity = ErrorSeverity::WARNING;
+        if (status.dmcTempSensorWarning.timestamp == 0) status.dmcTempSensorWarning.timestamp = now;
+    }
 }
 
 //=============================================================================

@@ -35,6 +35,11 @@ struct DMCData {
     float dcCurrent;          // DC bus current (A)
     float tempInverter;       // Inverter temperature (°C)
     float tempMotor;          // Motor temperature (°C)
+
+    // Error tracking (from DMC_ERR message 0x25A)
+    uint64_t errorBits;       // Full 64-bit error word
+    bool errorActive;         // Any error present
+    unsigned long lastErrorTime;  // Timestamp of last error
 };
 
 // NLG Data Structure
@@ -132,6 +137,103 @@ struct VehicleTelemetry {
 
     // Timestamp
     unsigned long timestamp;
+};
+
+//-----------------------------------------------------------------------------
+// ERROR REPORTING (for web error dashboard)
+//-----------------------------------------------------------------------------
+
+// Error severity levels
+enum class ErrorSeverity : uint8_t {
+    INFO,       // Informational (balancing active, etc.)
+    WARNING,    // Operation limited but safe
+    CRITICAL    // Requires immediate attention/shutdown
+};
+
+// Individual error entry with metadata
+struct ErrorEntry {
+    const char* code;           // Short code (e.g., "BMS_OVERTEMP")
+    const char* message;        // Human-readable message
+    ErrorSeverity severity;     // Severity level
+    bool active;                // Currently active
+    unsigned long timestamp;    // When error occurred/cleared
+
+    ErrorEntry() : code(""), message(""), severity(ErrorSeverity::INFO), active(false), timestamp(0) {}
+};
+
+// System-wide error status (all subsystems)
+struct SystemErrorStatus {
+    // ========== BMS ERRORS ==========
+    ErrorEntry bmsOverTemp;              // Battery over-temperature
+    ErrorEntry bmsOverCharge;            // Over-charging detected
+    ErrorEntry bmsCellError;             // Cell/string error
+    ErrorEntry bmsOverCurrent;           // Discharge overcurrent
+    ErrorEntry bmsOverDischarge;         // Over-discharge detected
+    ErrorEntry bmsTempNegative;          // Temperature below zero
+    ErrorEntry bmsTimeout;               // BMS communication lost
+    ErrorEntry bmsChargeMOSDisabled;     // Charge MOS disabled
+    ErrorEntry bmsDischargeMOSDisabled;  // Discharge MOS disabled
+
+    // ========== CHARGER (NLG5) ERRORS ==========
+    ErrorEntry chargerMainsFuse;         // Mains fuse defective
+    ErrorEntry chargerOutputFuse;        // Output fuse defective
+    ErrorEntry chargerShortCircuit;      // Power stage short circuit
+    ErrorEntry chargerMainsOV;           // Mains overvoltage
+    ErrorEntry chargerBatteryOV;         // Battery overvoltage
+    ErrorEntry chargerPolarity;          // Wrong battery polarity
+    ErrorEntry chargerCANTimeout;        // CAN control timeout
+    ErrorEntry chargerCANOff;            // CAN off (TX buffer full)
+    ErrorEntry chargerTempSensor;        // Temperature sensor error
+    ErrorEntry chargerCRCError;          // Checksum/CRC error
+    ErrorEntry chargerTimeout;           // VCU charger timeout
+
+    // ========== CHARGER (NLG5) WARNINGS ==========
+    ErrorEntry chargerLowMainsV;         // Mains voltage too low
+    ErrorEntry chargerLowBattV;          // Battery voltage too low
+    ErrorEntry chargerHighTemp;          // Internal over-temperature
+    ErrorEntry chargerControlOOR;        // Control out of range
+
+    // ========== INVERTER (DMC) ERRORS ==========
+    ErrorEntry dmcCANTimeout;            // CAN control timeout
+    ErrorEntry dmcInverterOvertemp;      // Inverter over-temperature
+    ErrorEntry dmcMotorOvertemp;         // Motor over-temperature
+    ErrorEntry dmcSpeedSensor;           // Speed sensor error
+    ErrorEntry dmcUndervoltage;          // DC under-voltage
+    ErrorEntry dmcOvervoltage;           // DC over-voltage
+    ErrorEntry dmcDCCurrentError;        // DC current measurement error
+    ErrorEntry dmcInitError;             // Initialization error
+    ErrorEntry dmcShortCircuit;          // Power stage short circuit
+    ErrorEntry dmcACOvercurrent;         // AC overcurrent
+    ErrorEntry dmcTimeout;               // VCU DMC timeout
+    ErrorEntry dmcSpeedSensorSupply;     // Speed sensor supply error
+    ErrorEntry dmcLimitsInvalid;         // Limits message invalid
+    ErrorEntry dmcControlInvalid;        // Control message invalid
+    ErrorEntry dmcVoltageMeas;           // Voltage measurement error
+    ErrorEntry dmcEEPROMError;           // Motor EEPROM error
+    ErrorEntry dmcStorageError;          // Data storage error
+
+    // ========== INVERTER (DMC) WARNINGS ==========
+    ErrorEntry dmcGeneralWarning;        // General warning flag
+    ErrorEntry dmcHVUndervoltage;        // HV under-voltage warning
+    ErrorEntry dmcTempSensorWarning;     // Temperature sensor warning
+
+    // ========== VCU SYSTEM ERRORS ==========
+    ErrorEntry vcuContactorError;        // Contactor operation error
+    ErrorEntry vcuEmergencyStop;         // Emergency stop activated
+    ErrorEntry vcuPrechargeTimeout;      // Precharge timeout
+    ErrorEntry vcuMotorOvertemp;         // Motor temp critical
+    ErrorEntry vcuInverterOvertemp;      // Inverter temp critical
+    ErrorEntry vcuBatteryOvertemp;       // Battery temp critical
+    ErrorEntry vcuLowVoltage;            // Pack voltage critically low
+    ErrorEntry vcuLowSOC;                // SOC critically low
+    ErrorEntry vcuCellCritical;          // Cell voltage critical
+    ErrorEntry vcuInterlock;             // Interlock open
+
+    // ========== SUMMARY COUNTERS ==========
+    uint16_t criticalCount;
+    uint16_t warningCount;
+    uint16_t infoCount;
+    bool hasAnyError;
 };
 
 //-----------------------------------------------------------------------------
@@ -278,6 +380,7 @@ extern ThreadSafeData<DMCData> sharedDMCData;
 extern ThreadSafeData<NLGData> sharedNLGData;
 extern ThreadSafeData<VehicleTelemetry> sharedTelemetry;
 extern ThreadSafeData<RuntimeConfigData> sharedRuntimeConfig;
+extern ThreadSafeData<SystemErrorStatus> sharedErrorStatus;
 
 //-----------------------------------------------------------------------------
 // SYSTEM EVENT BITS (for EventGroupHandle_t)

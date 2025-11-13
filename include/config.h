@@ -121,6 +121,7 @@ namespace CAN_ID {
     constexpr uint16_t DMC_STATUS       = 0x258;
     constexpr uint16_t DMC_POWER        = 0x259;
     constexpr uint16_t DMC_TEMPERATURE  = 0x458;
+    constexpr uint16_t DMC_ERR          = 0x25A;  // 602 - Error/Warning flags
 
     // NLG5 Messages (Charger - from DBC file)
     constexpr uint16_t NLG5_CTL         = 1560;  // 0x618 - Control TO charger

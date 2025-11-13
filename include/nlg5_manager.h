@@ -106,6 +106,13 @@ enum class NLG5State : uint8_t {
     DISABLED_STATE  // Manually disabled (renamed to avoid ESP32 HAL macro conflict)
 };
 
+enum class ErrorClearState : uint8_t {
+    IDLE,           // No error clearing in progress
+    CLEARING,       // Error clear bit set to 1, waiting 100ms
+    WAITING,        // Error clear bit back to 0, waiting for next cycle
+    FAILED          // Error clear attempted but errors persist
+};
+
 //=============================================================================
 // NLG5 MANAGER CLASS
 //=============================================================================
@@ -181,6 +188,32 @@ public:
      */
     float getChargingPower() const;
 
+    /**
+     * @brief Get computed enable flag
+     */
+    bool getEnableCharger() const { return enableCharger; }
+
+    /**
+     * @brief Get error clear state
+     */
+    bool isErrorClearing() const {
+        return errorClearState == ErrorClearState::CLEARING ||
+               errorClearState == ErrorClearState::WAITING;
+    }
+
+    /**
+     * @brief Update charge allowance and battery armed conditions
+     * @param allowed Charge allowed (from MCP A0 pin via InputManager)
+     * @param armed Battery contactors armed for charging
+     */
+    void setChargeConditions(bool allowed, bool armed);
+
+    /**
+     * @brief Populate system error status with charger errors
+     * @param status SystemErrorStatus structure to populate
+     */
+    void populateErrorStatus(SystemErrorStatus& status);
+
 private:
     NLG5DataExtended data;
     NLG5State state;
@@ -191,11 +224,28 @@ private:
     float targetCurrent;
     float maxMainsCurrent;
     bool enableCharger;
-    bool errorClearCycle;  // For cycling error clear bit
+    bool errorClearCycle;  // For cycling error clear bit (legacy)
 
     // State machine timing
     unsigned long stateStartTime;
     unsigned long lastControlSentTime;
+
+    // Enable control and anti-oscillation
+    bool chargeAllowed;                     // Charge allowance from MCP A0 pin
+    bool batteryArmed;                      // Battery contactors armed for charging
+    bool chargeAllowedPrev;                 // Previous charge allowance state
+    unsigned long lastDisableTime;          // Timestamp when charger was disabled
+    unsigned long lastDisableReason;        // Timeout to use: CHARGE_ALLOW, ERROR, or TEMP
+
+    // Error clearing state machine
+    ErrorClearState errorClearState;        // Current error clearing state
+    unsigned long errorClearStartTime;      // When error clear bit was set to 1
+
+    // Anti-oscillation timeout constants
+    static constexpr uint32_t CHARGE_ALLOW_TIMEOUT = 120000;  // 2 min after charge allowance lost
+    static constexpr uint32_t ERROR_RETRY_TIMEOUT = 30000;    // 30s after error cleared
+    static constexpr uint32_t TEMP_RETRY_TIMEOUT = 60000;     // 60s after temperature issue
+    static constexpr uint32_t ERROR_CLEAR_DURATION = 100;     // 100ms minimum for error clear bit
 
     // Message processing
     void processStatus(const uint8_t* buf);         // NLG5_ST (0x610)
@@ -214,6 +264,8 @@ private:
     // Helper functions
     void updateSharedData();
     void checkTimeout();
+    bool shouldEnableCharger();         // Check all preconditions for enabling
+    void handleErrorClearing();         // Manage error clear state machine
 
     // Parse helpers
     uint16_t parseU16(const uint8_t* buf, uint8_t offset) const;

@@ -64,6 +64,7 @@ private:
     // HTTP handlers
     void handleRoot(AsyncWebServerRequest *request);
     void handleGetTelemetry(AsyncWebServerRequest *request);
+    void handleGetErrors(AsyncWebServerRequest *request);
     void handleGetConfig(AsyncWebServerRequest *request);
     void handleSetConfig(AsyncWebServerRequest *request);
     void handleGetTaskStats(AsyncWebServerRequest *request);
@@ -93,6 +94,7 @@ private:
 
     // Helper functions
     String getTelemetryJSON();
+    String getErrorsJSON();
     String getConfigJSON();
     String getTaskStatsJSON();
     String getChargingConfigJSON();

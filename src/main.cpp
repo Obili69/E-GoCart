@@ -12,6 +12,7 @@
 #include "vehicle_control.h"
 #include "can_manager.h"
 #include "bms_manager.h"
+#include "nlg5_manager.h"
 #include "contactor_manager.h"
 #include "display_manager.h"
 #include "wifi_manager.h"
@@ -36,6 +37,7 @@ StateManager stateManager;
 VehicleControl vehicleControl;
 CANManager canManager;
 BMSManager bmsManager;
+NLG5Manager nlg5Manager;
 ContactorManager contactorManager;
 DisplayManager displayManager;
 WiFiManager wifiManager;
@@ -56,6 +58,7 @@ TaskHandle_t taskHandleWiFi = NULL;
 TaskHandle_t taskHandleWeb = NULL;
 TaskHandle_t taskHandleMonitor = NULL;
 TaskHandle_t taskHandleLED = NULL;  // LED control task
+TaskHandle_t taskHandleErrorAggregator = NULL;  // Error reporting task
 
 #if HARDWARE_TEST_MODE
 TaskHandle_t taskHandleSimData = NULL;  // Simulated data generator
@@ -73,6 +76,153 @@ ThreadSafeData<DMCData> sharedDMCData;
 ThreadSafeData<NLGData> sharedNLGData;
 ThreadSafeData<VehicleTelemetry> sharedTelemetry;
 ThreadSafeData<RuntimeConfigData> sharedRuntimeConfig;
+ThreadSafeData<SystemErrorStatus> sharedErrorStatus;
+
+//=============================================================================
+// ERROR REPORTING FUNCTIONS
+//=============================================================================
+
+/**
+ * @brief Populate VCU-specific errors into SystemErrorStatus
+ * @param status SystemErrorStatus structure to populate
+ *
+ * VCU errors include:
+ * - Contactor sequencing errors
+ * - Subsystem communication timeouts (BMS, DMC, NLG)
+ * - Emergency stop conditions
+ * - Safety limit violations
+ */
+void populateVCUErrors(SystemErrorStatus& status) {
+    unsigned long now = millis();
+
+    // Contactor errors
+    ContactorError contactorErr = contactorManager.getError();
+    status.vcuContactorError.active = (contactorErr != ContactorError::NONE);
+    if (status.vcuContactorError.active) {
+        status.vcuContactorError.severity = ErrorSeverity::CRITICAL;
+        if (status.vcuContactorError.timestamp == 0) status.vcuContactorError.timestamp = now;
+
+        switch (contactorErr) {
+            case ContactorError::PRECHARGE_TIMEOUT:
+                status.vcuContactorError.code = "VCU_CONTACTOR_PRECHARGE";
+                status.vcuContactorError.message = "Contactor precharge timeout";
+                break;
+            case ContactorError::CHARGE_ALLOW_VIOLATED:
+                status.vcuContactorError.code = "VCU_CHARGE_ALLOW";
+                status.vcuContactorError.message = "Charge allowance violated during sequence";
+                break;
+            case ContactorError::DISCHARGE_ALLOW_VIOLATED:
+                status.vcuContactorError.code = "VCU_DISCHARGE_ALLOW";
+                status.vcuContactorError.message = "Discharge allowance violated during sequence";
+                break;
+            case ContactorError::CURRENT_NOT_ZERO:
+                status.vcuContactorError.code = "VCU_CURRENT_NOT_ZERO";
+                status.vcuContactorError.message = "Battery current not zero during contactor operation";
+                break;
+            case ContactorError::BMS_NOT_ARMED:
+                status.vcuContactorError.code = "VCU_BMS_NOT_ARMED";
+                status.vcuContactorError.message = "BMS failed to arm during sequence";
+                break;
+            default:
+                status.vcuContactorError.code = "VCU_CONTACTOR_UNKNOWN";
+                status.vcuContactorError.message = "Unknown contactor error";
+                break;
+        }
+    }
+
+    // BMS communication timeout
+    status.bmsTimeout.active = !canManager.isBMSAlive();
+    if (status.bmsTimeout.active) {
+        status.bmsTimeout.code = "VCU_BMS_TIMEOUT";
+        status.bmsTimeout.message = "BMS CAN communication timeout";
+        status.bmsTimeout.severity = ErrorSeverity::CRITICAL;
+        if (status.bmsTimeout.timestamp == 0) status.bmsTimeout.timestamp = now;
+    }
+
+    // DMC communication timeout (check if DMC ready flag is false)
+    DMCData dmc = sharedDMCData.get();
+    status.dmcTimeout.active = !canManager.isDMCReady();
+    if (status.dmcTimeout.active) {
+        status.dmcTimeout.code = "VCU_DMC_TIMEOUT";
+        status.dmcTimeout.message = "DMC CAN communication timeout";
+        status.dmcTimeout.severity = ErrorSeverity::CRITICAL;
+        if (status.dmcTimeout.timestamp == 0) status.dmcTimeout.timestamp = now;
+    }
+
+    // NLG timeout (check if NLG data is valid)
+    status.chargerTimeout.active = !nlg5Manager.isAlive();
+    if (status.chargerTimeout.active) {
+        status.chargerTimeout.code = "VCU_NLG_TIMEOUT";
+        status.chargerTimeout.message = "Charger CAN communication timeout";
+        status.chargerTimeout.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerTimeout.timestamp == 0) status.chargerTimeout.timestamp = now;
+    }
+
+    // Emergency stop / Interlock open
+    status.vcuInterlock.active = !inputManager.isILClosed();
+    if (status.vcuInterlock.active) {
+        status.vcuInterlock.code = "VCU_INTERLOCK";
+        status.vcuInterlock.message = "Safety interlock open";
+        status.vcuInterlock.severity = ErrorSeverity::CRITICAL;
+        if (status.vcuInterlock.timestamp == 0) status.vcuInterlock.timestamp = now;
+    }
+
+    // Pack voltage safety limits
+    BMSData bms = sharedBMSData.get();
+    float packVoltage = bms.voltage;  // Already in volts
+    status.vcuLowVoltage.active = (packVoltage < Battery::MIN_VOLTAGE);
+    if (status.vcuLowVoltage.active) {
+        status.vcuLowVoltage.code = "VCU_LOW_VOLTAGE";
+        status.vcuLowVoltage.message = "Pack voltage below safety limit";
+        status.vcuLowVoltage.severity = ErrorSeverity::CRITICAL;
+        if (status.vcuLowVoltage.timestamp == 0) status.vcuLowVoltage.timestamp = now;
+    }
+
+    // Battery overtemperature safety limit
+    status.vcuBatteryOvertemp.active = (bms.temperature > Battery::MAX_TEMP_C);
+    if (status.vcuBatteryOvertemp.active) {
+        status.vcuBatteryOvertemp.code = "VCU_BATTERY_OVERTEMP";
+        status.vcuBatteryOvertemp.message = "Battery temperature exceeds safety limit";
+        status.vcuBatteryOvertemp.severity = ErrorSeverity::CRITICAL;
+        if (status.vcuBatteryOvertemp.timestamp == 0) status.vcuBatteryOvertemp.timestamp = now;
+    }
+
+    // Motor overtemperature
+    status.vcuMotorOvertemp.active = (dmc.tempMotor > Safety::MAX_MOTOR_TEMP);
+    if (status.vcuMotorOvertemp.active) {
+        status.vcuMotorOvertemp.code = "VCU_MOTOR_OVERTEMP";
+        status.vcuMotorOvertemp.message = "Motor temperature exceeds safety limit";
+        status.vcuMotorOvertemp.severity = ErrorSeverity::CRITICAL;
+        if (status.vcuMotorOvertemp.timestamp == 0) status.vcuMotorOvertemp.timestamp = now;
+    }
+
+    // Inverter overtemperature
+    status.vcuInverterOvertemp.active = (dmc.tempInverter > Safety::MAX_INVERTER_TEMP);
+    if (status.vcuInverterOvertemp.active) {
+        status.vcuInverterOvertemp.code = "VCU_INVERTER_OVERTEMP";
+        status.vcuInverterOvertemp.message = "Inverter temperature exceeds safety limit";
+        status.vcuInverterOvertemp.severity = ErrorSeverity::CRITICAL;
+        if (status.vcuInverterOvertemp.timestamp == 0) status.vcuInverterOvertemp.timestamp = now;
+    }
+
+    // Low SOC warning
+    status.vcuLowSOC.active = (bms.soc < 10);  // Less than 10%
+    if (status.vcuLowSOC.active) {
+        status.vcuLowSOC.code = "VCU_LOW_SOC";
+        status.vcuLowSOC.message = "Battery state of charge critically low";
+        status.vcuLowSOC.severity = ErrorSeverity::WARNING;
+        if (status.vcuLowSOC.timestamp == 0) status.vcuLowSOC.timestamp = now;
+    }
+
+    // Critical cell voltage
+    status.vcuCellCritical.active = (bms.minCellVoltage < Safety::CRITICAL_CELL_VOLTAGE);
+    if (status.vcuCellCritical.active) {
+        status.vcuCellCritical.code = "VCU_CELL_CRITICAL";
+        status.vcuCellCritical.message = "Cell voltage critically low";
+        status.vcuCellCritical.severity = ErrorSeverity::CRITICAL;
+        if (status.vcuCellCritical.timestamp == 0) status.vcuCellCritical.timestamp = now;
+    }
+}
 
 //=============================================================================
 // TASK FUNCTIONS
@@ -197,10 +347,20 @@ void taskStateManager(void* parameter) {
         DMCData dmcData = sharedDMCData.get();
         stateManager.updateCoolingPump(dmcData.tempMotor, dmcData.tempInverter);
 
-        // Handle charging state
+        // Update NLG5Manager with charge conditions
+        bool chargeAllowed = inputManager.isChargeAllowed();
+        bool batteryArmed = contactorManager.isChargeArmed();
+        nlg5Manager.setChargeConditions(chargeAllowed, batteryArmed);
+
+        // Update NLG5Manager (processes enable logic, error clearing, state machine)
+        nlg5Manager.update();
+
+        // Handle charging state - send NLG control with enable bit
         if (stateManager.isCharging()) {
             uint8_t chargerState = 1;  // 1 = charging enabled
-            canManager.sendNLGControl(chargerState);
+            bool enableCharger = nlg5Manager.getEnableCharger();
+            bool clearErrors = nlg5Manager.isErrorClearing();
+            canManager.sendNLGControl(chargerState, enableCharger, clearErrors);
         }
 
         // Feed watchdog
@@ -709,6 +869,112 @@ void taskLEDControl(void* parameter) {
     }
 }
 
+//=============================================================================
+// ERROR AGGREGATOR TASK
+//=============================================================================
+
+/**
+ * Error Aggregator Task - Collects errors from all subsystems
+ * Runs at 1Hz and populates the shared error status
+ */
+void taskErrorAggregator(void* parameter) {
+    DEBUG_PRINTLN("Task: Error Aggregator started");
+
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = pdMS_TO_TICKS(1000);  // 1Hz (every 1 second)
+
+    while (1) {
+        // Get local copy of error status
+        SystemErrorStatus errorStatus = sharedErrorStatus.get();
+
+        // Clear summary counters
+        errorStatus.criticalCount = 0;
+        errorStatus.warningCount = 0;
+        errorStatus.infoCount = 0;
+        errorStatus.hasAnyError = false;
+
+        // Collect errors from all subsystems
+        bmsManager.populateErrorStatus(errorStatus);
+        nlg5Manager.populateErrorStatus(errorStatus);
+        canManager.populateDMCErrorStatus(errorStatus);
+        populateVCUErrors(errorStatus);
+
+        // Count active errors by severity
+        // BMS errors (9 total)
+        if (errorStatus.bmsOverTemp.active) errorStatus.criticalCount++;
+        if (errorStatus.bmsOverCharge.active) errorStatus.criticalCount++;
+        if (errorStatus.bmsCellError.active) errorStatus.criticalCount++;
+        if (errorStatus.bmsOverCurrent.active) errorStatus.criticalCount++;
+        if (errorStatus.bmsOverDischarge.active) errorStatus.criticalCount++;
+        if (errorStatus.bmsTempNegative.active) errorStatus.warningCount++;
+        if (errorStatus.bmsTimeout.active) errorStatus.criticalCount++;
+        if (errorStatus.bmsChargeMOSDisabled.active) errorStatus.criticalCount++;
+        if (errorStatus.bmsDischargeMOSDisabled.active) errorStatus.criticalCount++;
+
+        // Charger errors (11 critical + 4 warnings)
+        if (errorStatus.chargerMainsFuse.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerOutputFuse.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerShortCircuit.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerMainsOV.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerBatteryOV.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerPolarity.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerCANTimeout.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerCANOff.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerTempSensor.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerCRCError.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerTimeout.active) errorStatus.criticalCount++;
+        if (errorStatus.chargerLowMainsV.active) errorStatus.warningCount++;
+        if (errorStatus.chargerLowBattV.active) errorStatus.warningCount++;
+        if (errorStatus.chargerHighTemp.active) errorStatus.warningCount++;
+        if (errorStatus.chargerControlOOR.active) errorStatus.warningCount++;
+
+        // DMC errors (17 critical + 3 warnings)
+        if (errorStatus.dmcCANTimeout.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcInverterOvertemp.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcMotorOvertemp.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcSpeedSensor.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcUndervoltage.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcOvervoltage.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcDCCurrentError.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcInitError.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcShortCircuit.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcACOvercurrent.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcTimeout.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcSpeedSensorSupply.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcLimitsInvalid.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcControlInvalid.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcVoltageMeas.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcEEPROMError.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcStorageError.active) errorStatus.criticalCount++;
+        if (errorStatus.dmcGeneralWarning.active) errorStatus.warningCount++;
+        if (errorStatus.dmcHVUndervoltage.active) errorStatus.warningCount++;
+        if (errorStatus.dmcTempSensorWarning.active) errorStatus.warningCount++;
+
+        // VCU errors (9 critical + 1 warning)
+        if (errorStatus.vcuContactorError.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuEmergencyStop.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuPrechargeTimeout.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuMotorOvertemp.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuInverterOvertemp.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuBatteryOvertemp.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuLowVoltage.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuCellCritical.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuInterlock.active) errorStatus.criticalCount++;
+        if (errorStatus.vcuLowSOC.active) errorStatus.warningCount++;
+
+        // Set hasAnyError flag
+        errorStatus.hasAnyError = (errorStatus.criticalCount > 0 ||
+                                    errorStatus.warningCount > 0 ||
+                                    errorStatus.infoCount > 0);
+
+        // Write back to shared data
+        sharedErrorStatus.set(errorStatus);
+
+        // Wait for next cycle
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    }
+}
+
 #if HARDWARE_TEST_MODE
 //=============================================================================
 // SIMULATED DATA (For hardware-less testing)
@@ -955,6 +1221,11 @@ void setup() {
     bmsManager.begin(&canManager);
     canManager.setBMSManager(&bmsManager);
 
+    // Initialize NLG5 Manager
+    DEBUG_PRINTLN("Initializing NLG5 Manager...");
+    nlg5Manager.begin();
+    canManager.setNLG5Manager(&nlg5Manager);
+
     DEBUG_PRINTLN("Initializing Vehicle Control...");
     vehicleControl.begin(&bmsManager, &inputManager, &contactorManager);  // Pass all managers for safety
 #endif
@@ -1036,6 +1307,10 @@ void setup() {
     xTaskCreatePinnedToCore(taskLEDControl, "LED", 2048,
         NULL, 3, &taskHandleLED, FreeRTOS::CORE_APPLICATION);
 
+    // Task: Error Aggregator (Priority: 4 - Medium, after safety)
+    xTaskCreatePinnedToCore(taskErrorAggregator, "ErrorAgg", 4096,
+        NULL, 4, &taskHandleErrorAggregator, FreeRTOS::CORE_APPLICATION);
+
     // Register tasks with monitor
 #if HARDWARE_TEST_MODE
     taskMonitor.registerTask(taskHandleSimData, "SimData", 500);
@@ -1052,6 +1327,7 @@ void setup() {
 #endif
     taskMonitor.registerTask(taskHandleWiFi, "WiFi", 5000);
     taskMonitor.registerTask(taskHandleWeb, "WebServer", 5000);
+    taskMonitor.registerTask(taskHandleErrorAggregator, "ErrorAgg", 2000);  // 1Hz task, 2s watchdog
     taskMonitor.registerTask(taskHandleMonitor, "Monitor", 0);  // No watchdog for monitor
 
     DEBUG_PRINTLN("\n========================================");

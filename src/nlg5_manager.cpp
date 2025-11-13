@@ -13,6 +13,17 @@ NLG5Manager::NLG5Manager() {
     targetVoltage = 0.0f;
     targetCurrent = 0.0f;
     maxMainsCurrent = Charger::MAINS_CURRENT_MAX;
+
+    // Initialize new enable control variables
+    chargeAllowed = false;
+    batteryArmed = false;
+    chargeAllowedPrev = false;
+    lastDisableTime = 0;
+    lastDisableReason = 0;
+
+    // Initialize error clearing state
+    errorClearState = ErrorClearState::IDLE;
+    errorClearStartTime = 0;
 }
 
 //=============================================================================
@@ -218,16 +229,17 @@ void NLG5Manager::update() {
         // Check timeout
         checkTimeout();
 
+        // Handle error clearing state machine
+        handleErrorClearing();
+
+        // Determine if charger should be enabled based on all conditions
+        bool shouldEnable = shouldEnableCharger();
+
+        // Update enableCharger flag for use by external code (main.cpp/CANManager)
+        enableCharger = shouldEnable;
+
         // Update state machine
         updateStateMachine();
-
-        // Send control message periodically (10 Hz when enabled)
-        if (enableCharger || errorClearCycle) {
-            if (now - lastControlSentTime >= 100) {
-                sendControl();
-                lastControlSentTime = now;
-            }
-        }
 
         // Update shared data
         updateSharedData();
@@ -449,6 +461,267 @@ bool NLG5Manager::isCharging() const {
 
 float NLG5Manager::getChargingPower() const {
     return data.batteryVoltageActual * data.batteryCurrentActual;
+}
+
+//=============================================================================
+// ENABLE CONTROL AND ERROR RECOVERY
+//=============================================================================
+
+void NLG5Manager::setChargeConditions(bool allowed, bool armed) {
+    chargeAllowedPrev = chargeAllowed;
+    chargeAllowed = allowed;
+    batteryArmed = armed;
+
+    // Detect when charge allowance is lost
+    if (chargeAllowedPrev && !chargeAllowed) {
+        // Charge allowance just went away - record disable time
+        lastDisableTime = millis();
+        lastDisableReason = CHARGE_ALLOW_TIMEOUT;
+#if DEBUG_CHARGING
+        DEBUG_PRINTLN("NLG5: Charge allowance lost, 2min timeout started");
+#endif
+    }
+}
+
+bool NLG5Manager::shouldEnableCharger() {
+    // Check all preconditions for enabling charger
+
+    // 1. Check charge allowance (from MCP A0 pin)
+    if (!chargeAllowed) {
+        return false;
+    }
+
+    // 2. Check battery armed state (contactors closed)
+    if (!batteryArmed) {
+        return false;
+    }
+
+    // 3. Check for active errors
+    if (hasError()) {
+        // Errors present - can't enable yet
+        // Error clearing will be handled by handleErrorClearing()
+        return false;
+    }
+
+    // 4. Check anti-oscillation timeout
+    unsigned long now = millis();
+    if (lastDisableTime > 0) {
+        unsigned long timeSinceDisable = now - lastDisableTime;
+        if (timeSinceDisable < lastDisableReason) {
+            // Still within timeout period
+            return false;
+        } else {
+            // Timeout expired, clear the disable time
+            lastDisableTime = 0;
+        }
+    }
+
+    // 5. Check if we're in error clearing state
+    if (errorClearState == ErrorClearState::CLEARING ||
+        errorClearState == ErrorClearState::WAITING) {
+        // Still clearing errors, can't enable yet
+        return false;
+    }
+
+    // 6. Check BMS data is valid (using basic BMSData from shared data)
+    BMSData bms = sharedBMSData.get();
+    // Note: Simple BMSData doesn't have dataValid flag, assume valid if we got here
+
+    // 7. Check temperature limits (use basic temperature from BMSData)
+    RuntimeConfigData config = sharedRuntimeConfig.get();
+    if (bms.temperature > config.maxChargeTemp || bms.temperature < config.minChargeTemp) {
+        // Temperature out of range - record timeout
+        if (lastDisableTime == 0 || lastDisableReason != TEMP_RETRY_TIMEOUT) {
+            lastDisableTime = millis();
+            lastDisableReason = TEMP_RETRY_TIMEOUT;
+        }
+        return false;
+    }
+
+    // All conditions met - can enable
+    return true;
+}
+
+void NLG5Manager::handleErrorClearing() {
+    // Manage the error clearing state machine
+
+    switch (errorClearState) {
+        case ErrorClearState::IDLE:
+            // Check if errors are present
+            if (hasError()) {
+                // Errors detected - start clearing process
+                errorClearState = ErrorClearState::CLEARING;
+                errorClearStartTime = millis();
+#if DEBUG_CHARGING
+                DEBUG_PRINTLN("NLG5: Starting error clear cycle");
+#endif
+            }
+            break;
+
+        case ErrorClearState::CLEARING:
+            // Error clear bit is set to 1 in sendControl()
+            // Wait for 100ms minimum before clearing bit
+            if (millis() - errorClearStartTime >= ERROR_CLEAR_DURATION) {
+                errorClearState = ErrorClearState::WAITING;
+#if DEBUG_CHARGING
+                DEBUG_PRINTLN("NLG5: Error clear bit cycling complete, waiting for next cycle");
+#endif
+            }
+            break;
+
+        case ErrorClearState::WAITING:
+            // Error clear bit has been cycled back to 0
+            // Check if errors are cleared on next update cycle
+            if (!hasError()) {
+                // Errors cleared successfully
+                errorClearState = ErrorClearState::IDLE;
+                lastDisableTime = millis();
+                lastDisableReason = ERROR_RETRY_TIMEOUT;
+#if DEBUG_CHARGING
+                DEBUG_PRINTLN("NLG5: Errors cleared, 30s retry timeout started");
+#endif
+            } else {
+                // Errors still present after clearing attempt
+                errorClearState = ErrorClearState::FAILED;
+#if DEBUG_CHARGING
+                DEBUG_PRINTLN("NLG5: Error clear failed, persistent errors detected");
+#endif
+            }
+            break;
+
+        case ErrorClearState::FAILED:
+            // Error clearing failed - errors persist
+            // Transition to ERROR state will be handled by state machine
+            // Reset to IDLE so we can try again if conditions change
+            errorClearState = ErrorClearState::IDLE;
+            break;
+    }
+}
+
+void NLG5Manager::populateErrorStatus(SystemErrorStatus& status) {
+    unsigned long now = millis();
+
+    // Critical Errors
+    status.chargerMainsFuse.active = data.error_MainsFuse;
+    if (data.error_MainsFuse) {
+        status.chargerMainsFuse.code = "CHG_MAINS_FUSE";
+        status.chargerMainsFuse.message = "Charger mains fuse defective";
+        status.chargerMainsFuse.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerMainsFuse.timestamp == 0) status.chargerMainsFuse.timestamp = now;
+    }
+
+    status.chargerOutputFuse.active = data.error_OutputFuse;
+    if (data.error_OutputFuse) {
+        status.chargerOutputFuse.code = "CHG_OUTPUT_FUSE";
+        status.chargerOutputFuse.message = "Charger output fuse defective";
+        status.chargerOutputFuse.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerOutputFuse.timestamp == 0) status.chargerOutputFuse.timestamp = now;
+    }
+
+    status.chargerShortCircuit.active = data.error_ShortCircuit;
+    if (data.error_ShortCircuit) {
+        status.chargerShortCircuit.code = "CHG_SHORT";
+        status.chargerShortCircuit.message = "Charger short circuit";
+        status.chargerShortCircuit.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerShortCircuit.timestamp == 0) status.chargerShortCircuit.timestamp = now;
+    }
+
+    status.chargerMainsOV.active = data.error_MainsOvervoltage1 || data.error_MainsOvervoltage2;
+    if (status.chargerMainsOV.active) {
+        status.chargerMainsOV.code = "CHG_MAINS_OV";
+        status.chargerMainsOV.message = "Charger mains overvoltage";
+        status.chargerMainsOV.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerMainsOV.timestamp == 0) status.chargerMainsOV.timestamp = now;
+    }
+
+    status.chargerBatteryOV.active = data.error_BatteryOvervoltage;
+    if (data.error_BatteryOvervoltage) {
+        status.chargerBatteryOV.code = "CHG_BATT_OV";
+        status.chargerBatteryOV.message = "Charger battery overvoltage";
+        status.chargerBatteryOV.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerBatteryOV.timestamp == 0) status.chargerBatteryOV.timestamp = now;
+    }
+
+    status.chargerPolarity.active = data.error_BatteryPolarity;
+    if (data.error_BatteryPolarity) {
+        status.chargerPolarity.code = "CHG_POLARITY";
+        status.chargerPolarity.message = "Charger wrong polarity";
+        status.chargerPolarity.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerPolarity.timestamp == 0) status.chargerPolarity.timestamp = now;
+    }
+
+    status.chargerCANTimeout.active = data.error_CANTimeout;
+    if (data.error_CANTimeout) {
+        status.chargerCANTimeout.code = "CHG_CAN_TO";
+        status.chargerCANTimeout.message = "Charger CAN timeout";
+        status.chargerCANTimeout.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerCANTimeout.timestamp == 0) status.chargerCANTimeout.timestamp = now;
+    }
+
+    status.chargerCANOff.active = data.error_CANOff;
+    if (data.error_CANOff) {
+        status.chargerCANOff.code = "CHG_CAN_OFF";
+        status.chargerCANOff.message = "Charger CAN bus off";
+        status.chargerCANOff.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerCANOff.timestamp == 0) status.chargerCANOff.timestamp = now;
+    }
+
+    status.chargerTempSensor.active = data.error_TempSensor;
+    if (data.error_TempSensor) {
+        status.chargerTempSensor.code = "CHG_TEMP_SNS";
+        status.chargerTempSensor.message = "Charger temp sensor error";
+        status.chargerTempSensor.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerTempSensor.timestamp == 0) status.chargerTempSensor.timestamp = now;
+    }
+
+    status.chargerCRCError.active = data.error_CRCChecksum;
+    if (data.error_CRCChecksum) {
+        status.chargerCRCError.code = "CHG_CRC";
+        status.chargerCRCError.message = "Charger CRC error";
+        status.chargerCRCError.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerCRCError.timestamp == 0) status.chargerCRCError.timestamp = now;
+    }
+
+    status.chargerTimeout.active = !isAlive();
+    if (!isAlive()) {
+        status.chargerTimeout.code = "CHG_TIMEOUT";
+        status.chargerTimeout.message = "Charger communication lost";
+        status.chargerTimeout.severity = ErrorSeverity::CRITICAL;
+        if (status.chargerTimeout.timestamp == 0) status.chargerTimeout.timestamp = now;
+    }
+
+    // Warnings
+    status.chargerLowMainsV.active = data.warning_LowMainsVoltage;
+    if (data.warning_LowMainsVoltage) {
+        status.chargerLowMainsV.code = "CHG_LOW_MAINS";
+        status.chargerLowMainsV.message = "Charger mains voltage low";
+        status.chargerLowMainsV.severity = ErrorSeverity::WARNING;
+        if (status.chargerLowMainsV.timestamp == 0) status.chargerLowMainsV.timestamp = now;
+    }
+
+    status.chargerLowBattV.active = data.warning_LowBatteryVoltage;
+    if (data.warning_LowBatteryVoltage) {
+        status.chargerLowBattV.code = "CHG_LOW_BATT";
+        status.chargerLowBattV.message = "Charger battery voltage low";
+        status.chargerLowBattV.severity = ErrorSeverity::WARNING;
+        if (status.chargerLowBattV.timestamp == 0) status.chargerLowBattV.timestamp = now;
+    }
+
+    status.chargerHighTemp.active = data.warning_HighTemperature;
+    if (data.warning_HighTemperature) {
+        status.chargerHighTemp.code = "CHG_HIGH_TEMP";
+        status.chargerHighTemp.message = "Charger overtemperature";
+        status.chargerHighTemp.severity = ErrorSeverity::WARNING;
+        if (status.chargerHighTemp.timestamp == 0) status.chargerHighTemp.timestamp = now;
+    }
+
+    status.chargerControlOOR.active = data.warning_ControlOutOfRange;
+    if (data.warning_ControlOutOfRange) {
+        status.chargerControlOOR.code = "CHG_CTRL_OOR";
+        status.chargerControlOOR.message = "Charger control out of range";
+        status.chargerControlOOR.severity = ErrorSeverity::WARNING;
+        if (status.chargerControlOOR.timestamp == 0) status.chargerControlOOR.timestamp = now;
+    }
 }
 
 //=============================================================================

@@ -8,8 +8,9 @@
 #include "config.h"
 #include "data_structures.h"
 
-// Forward declaration
+// Forward declarations
 class BMSManager;
+class NLG5Manager;
 
 //=============================================================================
 // CAN MANAGER - Dual CAN Bus FreeRTOS Version
@@ -38,6 +39,12 @@ public:
      * @param bmsMgr Pointer to BMSManager
      */
     void setBMSManager(BMSManager* bmsMgr);
+
+    /**
+     * @brief Set NLG5 manager for routing NLG5 messages
+     * @param nlg5Mgr Pointer to NLG5Manager
+     */
+    void setNLG5Manager(NLG5Manager* nlg5Mgr);
 
     /**
      * @brief Process incoming messages from queue (call from CAN RX task)
@@ -70,8 +77,10 @@ public:
     /**
      * @brief Send NLG control message
      * @param stateDemand Requested charger state
+     * @param enableCharger Enable charger power stage (bit 0)
+     * @param clearErrors Cycle error clear bit (bit 1)
      */
-    void sendNLGControl(uint8_t stateDemand);
+    void sendNLGControl(uint8_t stateDemand, bool enableCharger, bool clearErrors = false);
 
     // -------------------------------------------------------------------------
     // DATA ACCESS (Thread-safe via shared data structures)
@@ -99,6 +108,12 @@ public:
     bool isCharging() const;
 
     /**
+     * @brief Populate system error status with DMC errors
+     * @param status SystemErrorStatus structure to populate
+     */
+    void populateDMCErrorStatus(SystemErrorStatus& status);
+
+    /**
      * @brief CAN interrupt handler (static, called from ISR)
      */
     static void IRAM_ATTR canISR();
@@ -118,8 +133,9 @@ private:
     SPIClass* spi;
     bool twaiInitialized;
 
-    // BMS Manager for routing BMS messages
+    // Manager pointers for routing messages
     BMSManager* bmsManager;
+    NLG5Manager* nlg5Manager;
 
     // Local copies of data (updated from shared data)
     BMSData bmsData;
@@ -146,6 +162,10 @@ private:
     uint8_t dmcControlBuffer[8];
     uint8_t dmcLimitsBuffer[8];
     uint8_t nlgControlBuffer[8];
+
+    // Error clear tracking
+    bool errorClearActive;              // Is error clear bit currently set?
+    unsigned long errorClearSetTime;    // When was error clear bit set to 1?
 
     // Helper functions
     void resetBuffers();

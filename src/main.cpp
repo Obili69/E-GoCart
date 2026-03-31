@@ -20,6 +20,18 @@
 #include "task_monitor.h"
 
 //=============================================================================
+// SOFTWARE VERSION
+//=============================================================================
+#define SW_VERSION_MAJOR 1
+#define SW_VERSION_MINOR 0
+#define SW_VERSION_PATCH 0
+#define SW_VERSION_STR   "v1.0.0"
+// Changelog:
+//   v1.0.0 - Initial release. Dual-CAN VCU firmware for ESP32-S3.
+//            Features: BMS/DMC/NLG5 CAN control, FreeRTOS multi-task,
+//            WiFi telemetry, Nextion display, deep sleep, OTA updates.
+
+//=============================================================================
 // DEEP SLEEP CONFIGURATION
 //=============================================================================
 #define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)  // 2 ^ GPIO_NUMBER in hex

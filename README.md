@@ -17,6 +17,23 @@ Vehicle Control Unit (VCU) firmware for an electric go-kart, built on ESP32-S3 w
 | Battery | 104S LiPo, ~312 V nominal, 16 Ah |
 | Motor | Configured for 250 Nm fwd / 100 Nm regen / 60 Nm reverse |
 
+## Battery — Racepow RP-SSB-1174170
+
+| Parameter | Value |
+|-----------|-------|
+| Model | Racepow RP-SSB-1174170 |
+| Configuration | 104S LiPo (7× 14S + 1× 6S in series) |
+| Nominal Voltage | ~385 V system (104 × 3.7 V) |
+| Charge Cut-off | ~436.8 V (104 × 4.2 V) |
+| Discharge Cut-off | ~312 V (104 × 3.0 V) |
+| Capacity | 16 Ah |
+| Charge Current | 8 A (0.5C) |
+| Continuous Discharge | 400 A (25C) |
+| Max Discharge | 480 A (30C) |
+| Charge Temp | 0 °C – 45 °C |
+| Discharge Temp | −20 °C – 55 °C |
+| Storage Temp | −20 °C – 35 °C (alle 3 Monate nachladen) |
+
 ## Software Architecture
 
 12+ FreeRTOS tasks split across two cores:

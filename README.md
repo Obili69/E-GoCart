@@ -14,7 +14,7 @@ Vehicle Control Unit (VCU) firmware for an electric go-kart, built on ESP32-S3 w
 | Display | Nextion HMI (UART) |
 | I/O Expander | MCP23017 (I2C) |
 | ADC | ADS1115 — throttle, regen pedal |
-| Battery | 104S LiPo, ~312 V nominal, 16 Ah |
+| Battery | 104S LiPo, ~385 V nominal, 16 Ah |
 | Motor | Configured for 250 Nm fwd / 100 Nm regen / 60 Nm reverse |
 
 ## Battery — Racepow RP-SSB-1174170
@@ -26,7 +26,7 @@ Vehicle Control Unit (VCU) firmware for an electric go-kart, built on ESP32-S3 w
 | Nominal Voltage | ~385 V system (104 × 3.7 V) |
 | Charge Cut-off | ~436.8 V (104 × 4.2 V) |
 | Discharge Cut-off | ~312 V (104 × 3.0 V) |
-| Capacity | 16 Ah |
+| Capacity | 16 Ah |~7 kWh |
 | Charge Current | 8 A (0.5C) |
 | Continuous Discharge | 400 A (25C) |
 | Max Discharge | 480 A (30C) |

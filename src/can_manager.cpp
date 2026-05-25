@@ -17,6 +17,8 @@ CANManager::CANManager()
     , canRxTaskHandle(nullptr)
     , errorClearActive(false)
     , errorClearSetTime(0)
+    , can2RxCount(0)
+    , lastCAN2StatusTime(0)
 {
     resetBuffers();
 
@@ -175,25 +177,59 @@ void CANManager::pollCAN2() {
 
 #if ENABLE_CAN2
     if (!twaiInitialized) {
-        return;  // TWAI not initialized
+        return;
     }
 
-    // Try to receive message from TWAI (non-blocking)
-    twai_message_t twai_msg;
-    esp_err_t err = twai_receive(&twai_msg, 0);  // 0 = non-blocking
+    // Check TWAI bus state and recover from bus-off (caused by EMI when contactors close)
+    twai_status_info_t twai_status;
+    if (twai_get_status_info(&twai_status) == ESP_OK) {
+        if (twai_status.state == TWAI_STATE_BUS_OFF) {
+            DEBUG_PRINTLN("CAN2: Bus-off detected! Initiating recovery...");
+            twai_initiate_recovery();
+            return;
+        }
+        if (twai_status.state == TWAI_STATE_RECOVERING) {
+            return;
+        }
+        if (twai_status.state == TWAI_STATE_STOPPED) {
+            DEBUG_PRINTLN("CAN2: TWAI stopped — restarting...");
+            twai_start();
+            return;
+        }
 
-    if (err == ESP_OK) {
-        // Convert TWAI message to CAN message format
+        // Periodic CAN2 status log (every 5s) — helps diagnose RX issues
+        unsigned long now = millis();
+        if (now - lastCAN2StatusTime >= 5000) {
+            lastCAN2StatusTime = now;
+            DEBUG_PRINTF("CAN2: state=%d rx_msgs=%u tx_err=%u rx_err=%u bms_alive=%s\n",
+                (int)twai_status.state,
+                (unsigned)can2RxCount,
+                (unsigned)twai_status.tx_error_counter,
+                (unsigned)twai_status.rx_error_counter,
+                isBMSAlive() ? "YES" : "NO");
+            can2RxCount = 0;
+        }
+    }
+
+    // Drain all available TWAI messages — BMS sends ~50 messages per burst
+    // (35 cell groups + temp groups + status groups), so reading one per cycle
+    // would overflow the 20-deep hardware queue and drop messages.
+    twai_message_t twai_msg;
+    while (twai_receive(&twai_msg, 0) == ESP_OK) {
+        can2RxCount++;
+
+#if DEBUG_CAN_MESSAGES
+        DEBUG_PRINTF("CAN2 RX: 0x%08X ext=%d [%d bytes]\n",
+            twai_msg.identifier, twai_msg.extd, twai_msg.data_length_code);
+#endif
+
         CANMessage msg;
         msg.timestamp = millis();
         msg.id = twai_msg.identifier;
         msg.len = twai_msg.data_length_code;
         memcpy(msg.data, twai_msg.data, msg.len);
-
-        // Push to queue (can block briefly since not in ISR)
-        xQueueSend(canRxQueue, &msg, pdMS_TO_TICKS(10));
+        xQueueSend(canRxQueue, &msg, pdMS_TO_TICKS(5));
     }
-    // ESP_ERR_TIMEOUT means no message available - this is normal
 #endif
 }
 
@@ -522,6 +558,7 @@ void CANManager::sendNLGControl(uint8_t stateDemand, bool enableCharger, bool cl
 //=============================================================================
 
 bool CANManager::isBMSAlive() const {
+    if (lastBMSTime == 0) return false;  // Never received a BMS message
     return (millis() - lastBMSTime) < 2000;
 }
 

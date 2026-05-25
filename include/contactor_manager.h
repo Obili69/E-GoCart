@@ -5,10 +5,13 @@
 // Forward declarations
 class BMSManager;
 class InputManager;
+class NLG5Manager;
 
 //=============================================================================
 // CONTACTOR MANAGER
-// Handles: Separate charge/discharge contactor sequences with precharge
+// Handles: Unified HV bus with shared HV+/HV-/precharge contactors
+// Drive:  HV- → Precharge → wait → HV+ → open Precharge
+// Charge: HV- → Charge Cont → Precharge → wait → HV+ → open Precharge
 // Safety: Monitors charge/discharge allowance and current verification
 //=============================================================================
 
@@ -36,10 +39,11 @@ public:
 
     /**
      * @brief Initialize contactor manager
-     * @param bmsMgr Pointer to BMSManager for BMS arming and current checks
-     * @param inputMgr Pointer to InputManager for allowance monitoring
+     * @param bmsMgr   BMS for arming, current, and pack voltage
+     * @param inputMgr InputManager for allowance monitoring
+     * @param nlgMgr   NLG5Manager for charger-side bus voltage (charge precharge verify)
      */
-    void begin(BMSManager* bmsMgr, InputManager* inputMgr);
+    void begin(BMSManager* bmsMgr, InputManager* inputMgr, NLG5Manager* nlgMgr);
 
     /**
      * @brief Update contactor state machine (call periodically)
@@ -104,6 +108,7 @@ private:
     // Manager references
     BMSManager* bmsManager;
     InputManager* inputManager;
+    NLG5Manager* nlg5Manager;
 
     // State
     ContactorState currentState;
@@ -126,19 +131,20 @@ private:
     void handleDischargeArmed();
     void handleError();
 
-    // Hardware control
-    void closeChargePrecharge();
-    void openChargePrecharge();
-    void closeMainChargeContactor();
-    void openMainChargeContactor();
-    void closeDischargePrecharge();
-    void openDischargePrecharge();
-    void closeMainDischargeContactor();
-    void openMainDischargeContactor();
+    // Hardware control (shared bus)
+    void closeHVMinus();
+    void openHVMinus();
+    void closeHVPlus();
+    void openHVPlus();
+    void closePrecharge();
+    void openPrecharge();
+    void closeChargeContactor();
+    void openChargeContactor();
     void openAllHardware();
 
     // Safety checks
     bool verifyCurrentZero();
     bool isBMSArmed();
     bool waitForCurrentZero(uint32_t timeoutMs);
+    bool verifyPrechargeVoltage(bool isCharging);
 };

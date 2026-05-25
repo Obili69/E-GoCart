@@ -183,7 +183,7 @@ public:
      * @param numCells Number of series cells (default from Battery::NUM_CELLS_TESTING)
      * Call this after connection is established
      */
-    void sendConfiguration(uint8_t numCells = Battery::NUM_CELLS_TESTING);
+    void sendConfiguration(uint8_t numCells = Battery::NUM_CELLS);
 
     /**
      * @brief Set host display state (turn on/off BMS display)

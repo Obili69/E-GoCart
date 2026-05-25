@@ -49,7 +49,7 @@ void BMSManager::begin(CANManager* canMgr) {
     // Reset data structure
     memset(&data, 0, sizeof(data));
     data.dataValid = false;
-    data.numCellsConfigured = Battery::NUM_CELLS_TESTING;  // Start with test config
+    data.numCellsConfigured = Battery::NUM_CELLS;
 
     // Request connection with BMS
     requestConnection();
@@ -58,7 +58,7 @@ void BMSManager::begin(CANManager* canMgr) {
     vTaskDelay(pdMS_TO_TICKS(400));
 
     // Send full configuration
-    sendConfiguration(Battery::NUM_CELLS_TESTING);
+    sendConfiguration(Battery::NUM_CELLS);
 
     DEBUG_PRINTLN("BMSManager: Initialized (connection + configuration sent)");
 }

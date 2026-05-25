@@ -167,6 +167,10 @@ private:
     bool errorClearActive;              // Is error clear bit currently set?
     unsigned long errorClearSetTime;    // When was error clear bit set to 1?
 
+    // CAN2 (TWAI) diagnostics
+    uint32_t can2RxCount;               // Messages received since last status log
+    unsigned long lastCAN2StatusTime;   // Last time CAN2 status was printed
+
     // Helper functions
     void resetBuffers();
     void readCAN1Message();  // Called from task to read CAN1 messages

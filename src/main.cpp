@@ -982,6 +982,9 @@ void taskErrorAggregator(void* parameter) {
         // Write back to shared data
         sharedErrorStatus.set(errorStatus);
 
+        // Feed watchdog
+        FEED_WATCHDOG();
+
         // Wait for next cycle
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
@@ -1222,7 +1225,7 @@ void setup() {
 
     // Initialize Contactor Manager first (sets up contactor pins)
     DEBUG_PRINTLN("Initializing Contactor Manager...");
-    contactorManager.begin(&bmsManager, &inputManager);
+    contactorManager.begin(&bmsManager, &inputManager, &nlg5Manager);
 
     // Initialize StateManager (powers on BMS, waits 2s)
     DEBUG_PRINTLN("Initializing State Manager...");

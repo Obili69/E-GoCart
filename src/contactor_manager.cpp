@@ -1,6 +1,7 @@
 #include "contactor_manager.h"
 #include "bms_manager.h"
 #include "input_manager.h"
+#include "nlg5_manager.h"
 #include "data_structures.h"
 
 //=============================================================================
@@ -10,6 +11,7 @@
 ContactorManager::ContactorManager()
     : bmsManager(nullptr)
     , inputManager(nullptr)
+    , nlg5Manager(nullptr)
     , currentState(ContactorState::OPEN)
     , previousState(ContactorState::OPEN)
     , lastError(ContactorError::NONE)
@@ -22,19 +24,18 @@ ContactorManager::ContactorManager()
 // INITIALIZATION
 //=============================================================================
 
-void ContactorManager::begin(BMSManager* bmsMgr, InputManager* inputMgr) {
+void ContactorManager::begin(BMSManager* bmsMgr, InputManager* inputMgr, NLG5Manager* nlgMgr) {
     DEBUG_PRINTLN("ContactorManager: Initializing...");
 
     bmsManager = bmsMgr;
     inputManager = inputMgr;
+    nlg5Manager = nlgMgr;
 
-    // Configure all contactor pins as outputs
-    pinMode(Pins::CHARGE_PRECHARGE, OUTPUT);
-    pinMode(Pins::MAIN_CHARGE_CONTACTOR, OUTPUT);
-    pinMode(Pins::DISCHARGE_PRECHARGE, OUTPUT);
-    pinMode(Pins::MAIN_DISCHARGE_CONTACTOR, OUTPUT);
+    pinMode(Pins::HV_MINUS_CONTACTOR,  OUTPUT);
+    pinMode(Pins::HV_PLUS_CONTACTOR,   OUTPUT);
+    pinMode(Pins::PRECHARGE_CONTACTOR, OUTPUT);
+    pinMode(Pins::CHARGE_CONTACTOR,    OUTPUT);
 
-    // Ensure all contactors are open initially
     openAllHardware();
 
     DEBUG_PRINTLN("ContactorManager: Initialized - all contactors OPEN");
@@ -84,25 +85,25 @@ void ContactorManager::handleOpen() {
 void ContactorManager::handleChargePrecharging() {
     unsigned long elapsed = millis() - stateEntryTime;
 
-    // Check for charge allowance violation during precharge
     if (!inputManager->isChargeAllowed()) {
         DEBUG_PRINTLN("ContactorManager: Charge allowance violated during precharge!");
         setError(ContactorError::CHARGE_ALLOW_VIOLATED);
         return;
     }
 
-    // Wait for precharge time
     if (elapsed >= Timing::PRECHARGE_DELAY_MS) {
-        DEBUG_PRINTLN("ContactorManager: Charge precharge complete, closing main contactor...");
+        if (!verifyPrechargeVoltage(true)) {
+            if (elapsed >= Timing::PRECHARGE_TIMEOUT) {
+                DEBUG_PRINTLN("ContactorManager: Charge precharge TIMEOUT - bus voltage not reached!");
+                setError(ContactorError::PRECHARGE_TIMEOUT);
+            }
+            return;
+        }
 
-        // Close main charge contactor
-        closeMainChargeContactor();
-
-        // Wait a moment for contactor to close
+        DEBUG_PRINTLN("ContactorManager: Charge precharge verified, closing HV+...");
+        closeHVPlus();
         delay(100);
-
-        // Open precharge relay
-        openChargePrecharge();
+        openPrecharge();
 
         DEBUG_PRINTLN("ContactorManager: Charge path ARMED");
         transitionTo(ContactorState::CHARGE_ARMED);
@@ -110,21 +111,13 @@ void ContactorManager::handleChargePrecharging() {
 }
 
 void ContactorManager::handleChargeArmed() {
-    // Monitor charge allowance - if it goes high (not allowed), must disable charging
     if (!inputManager->isChargeAllowed()) {
         DEBUG_PRINTLN("ContactorManager: Charge allowance violated! Disabling charge...");
-
-        // Set charge current to 0 in NLG (handled by charger control in state_manager)
-        // Wait for current to go to zero, then open contactors
         DEBUG_PRINTLN("ContactorManager: Waiting for charge current to reach zero...");
 
-        if (waitForCurrentZero(Timing::CURRENT_ZERO_TIMEOUT)) {
-            DEBUG_PRINTLN("ContactorManager: Current verified zero");
-            
-        } else {
+        if (!waitForCurrentZero(Timing::CURRENT_ZERO_TIMEOUT)) {
             DEBUG_PRINTLN("ContactorManager: ERROR - Current did not reach zero in time!");
-            openMainChargeContactor();
-            delay(100);
+            openAllHardware();
             transitionTo(ContactorState::OPEN);
             setError(ContactorError::CURRENT_NOT_ZERO);
         }
@@ -134,46 +127,39 @@ void ContactorManager::handleChargeArmed() {
 void ContactorManager::handleDischargePrecharging() {
     unsigned long elapsed = millis() - stateEntryTime;
 
-    // Check for discharge allowance violation during precharge
     if (!inputManager->isDischargeAllowed()) {
         DEBUG_PRINTLN("ContactorManager: Discharge allowance violated during precharge!");
         setError(ContactorError::DISCHARGE_ALLOW_VIOLATED);
         return;
     }
 
-    // Wait for precharge time
     if (elapsed >= Timing::PRECHARGE_DELAY_MS) {
-        DEBUG_PRINTLN("ContactorManager: Discharge precharge complete, closing main contactor...");
+        if (!verifyPrechargeVoltage(false)) {
+            if (elapsed >= Timing::PRECHARGE_TIMEOUT) {
+                DEBUG_PRINTLN("ContactorManager: Drive precharge TIMEOUT - bus voltage not reached!");
+                setError(ContactorError::PRECHARGE_TIMEOUT);
+            }
+            return;
+        }
 
-        // Close main discharge contactor
-        closeMainDischargeContactor();
-
-        // Wait a moment for contactor to close
+        DEBUG_PRINTLN("ContactorManager: Drive precharge verified, closing HV+...");
+        closeHVPlus();
         delay(100);
+        openPrecharge();
 
-        // Open precharge relay
-        openDischargePrecharge();
-
-        DEBUG_PRINTLN("ContactorManager: Discharge path ARMED");
+        DEBUG_PRINTLN("ContactorManager: Drive path ARMED");
         transitionTo(ContactorState::DISCHARGE_ARMED);
     }
 }
 
 void ContactorManager::handleDischargeArmed() {
-    // Monitor discharge allowance - if it goes high (not allowed), must disable driving
     if (!inputManager->isDischargeAllowed()) {
         DEBUG_PRINTLN("ContactorManager: Discharge allowance violated! Disabling discharge...");
-
-        // Force vehicle to Neutral (handled by vehicle_control)
-        // Wait for current to go to zero, then open contactors
         DEBUG_PRINTLN("ContactorManager: Waiting for discharge current to reach zero...");
 
-        if (waitForCurrentZero(Timing::CURRENT_ZERO_TIMEOUT)) {
-            DEBUG_PRINTLN("ContactorManager: Current verified zero");
-        } else {
-            DEBUG_PRINTLN("ContactorManager: ERROR - Current did not reach zero in time! opening contactors");
-            openMainDischargeContactor();
-            delay(100);
+        if (!waitForCurrentZero(Timing::CURRENT_ZERO_TIMEOUT)) {
+            DEBUG_PRINTLN("ContactorManager: ERROR - Current did not reach zero in time! Opening contactors");
+            openAllHardware();
             transitionTo(ContactorState::OPEN);
             setError(ContactorError::CURRENT_NOT_ZERO);
         }
@@ -181,10 +167,12 @@ void ContactorManager::handleDischargeArmed() {
 }
 
 void ContactorManager::handleError() {
-    // Error state - contactors should already be open
-    // Can only exit via manual reset or system restart
-    DEBUG_PRINTLN("ContactorManager: ERROR state - manual reset required");
-    delay(1000);  // Prevent log spam
+    static unsigned long lastPrint = 0;
+    unsigned long now = millis();
+    if (now - lastPrint >= 1000) {
+        DEBUG_PRINTLN("ContactorManager: ERROR state - manual reset required");
+        lastPrint = now;
+    }
 }
 
 //=============================================================================
@@ -198,60 +186,65 @@ bool ContactorManager::startChargeSequence() {
         DEBUG_PRINTLN("  ERROR: Contactors not in OPEN state!");
         return false;
     }
-    
-    // Check charge allowance before starting
+
     if (!inputManager->isChargeAllowed()) {
         DEBUG_PRINTLN("  ERROR: Charge not allowed!");
         setError(ContactorError::CHARGE_ALLOW_VIOLATED);
         return false;
     }
 
-    // Verify BMS is armed
     if (!isBMSArmed()) {
         DEBUG_PRINTLN("  ERROR: BMS not armed!");
         setError(ContactorError::BMS_NOT_ARMED);
         return false;
     }
 
-    // Step 2: Close charge precharge relay
-    DEBUG_PRINTLN("  Step 2: Closing charge precharge relay...");
-    closeChargePrecharge();
+    // Charge sequence: HV- → Charge Cont → Precharge → [wait] → HV+ → open Precharge
+    DEBUG_PRINTLN("  Step 1: Closing HV-...");
+    closeHVMinus();
+    delay(150);
 
-    // Transition to precharging state (will wait for precharge time)
+    DEBUG_PRINTLN("  Step 2: Closing Charge Contactor...");
+    closeChargeContactor();
+    delay(150);
+
+    DEBUG_PRINTLN("  Step 3: Closing Precharge...");
+    closePrecharge();
+
     transitionTo(ContactorState::CHARGE_PRECHARGING);
-
     return true;
 }
 
 bool ContactorManager::startDischargeSequence() {
-    DEBUG_PRINTLN("ContactorManager: Starting DISCHARGE sequence...");
+    DEBUG_PRINTLN("ContactorManager: Starting DRIVE sequence...");
     inputManager->update();
+
     if (currentState != ContactorState::OPEN) {
         DEBUG_PRINTLN("  ERROR: Contactors not in OPEN state!");
         return false;
     }
 
-    // Check discharge allowance before starting
     if (!inputManager->isDischargeAllowed()) {
         DEBUG_PRINTLN("  ERROR: Discharge not allowed!");
         setError(ContactorError::DISCHARGE_ALLOW_VIOLATED);
         return false;
     }
 
-    // Verify BMS is armed
     if (!isBMSArmed()) {
         DEBUG_PRINTLN("  ERROR: BMS not armed!");
         setError(ContactorError::BMS_NOT_ARMED);
         return false;
     }
 
-    // Step 2: Close discharge precharge relay
-    DEBUG_PRINTLN("  Step 2: Closing discharge precharge relay...");
-    closeDischargePrecharge();
+    // Drive sequence: HV- → Precharge → [wait] → HV+ → open Precharge
+    DEBUG_PRINTLN("  Step 1: Closing HV-...");
+    closeHVMinus();
+    delay(150);
 
-    // Transition to precharging state (will wait for precharge time)
+    DEBUG_PRINTLN("  Step 2: Closing Precharge...");
+    closePrecharge();
+
     transitionTo(ContactorState::DISCHARGE_PRECHARGING);
-
     return true;
 }
 
@@ -259,25 +252,20 @@ void ContactorManager::openAllContactors(bool immediate) {
     DEBUG_PRINTLN("ContactorManager: Opening all contactors...");
 
     if (!immediate) {
-        // Wait for current to reach zero before opening
         DEBUG_PRINTLN("  Waiting for current to reach zero...");
         if (!waitForCurrentZero(Timing::CURRENT_ZERO_TIMEOUT)) {
             DEBUG_PRINTLN("  WARNING: Current did not reach zero, opening anyway!");
         }
     }
-    // Open all hardware
-    openAllHardware();
 
+    openAllHardware();
     transitionTo(ContactorState::OPEN);
     DEBUG_PRINTLN("ContactorManager: All contactors OPEN");
 }
 
 void ContactorManager::emergencyShutdown() {
     DEBUG_PRINTLN("ContactorManager: EMERGENCY SHUTDOWN!");
-
-    // Immediately open all contactors without waiting
     openAllHardware();
-
     setError(ContactorError::CURRENT_NOT_ZERO);
 }
 
@@ -285,51 +273,51 @@ void ContactorManager::emergencyShutdown() {
 // HARDWARE CONTROL
 //=============================================================================
 
-void ContactorManager::closeChargePrecharge() {
-    digitalWrite(Pins::CHARGE_PRECHARGE, HIGH);
-    DEBUG_PRINTLN("  Charge precharge relay: CLOSED");
+void ContactorManager::closeHVMinus() {
+    digitalWrite(Pins::HV_MINUS_CONTACTOR, HIGH);
+    DEBUG_PRINTLN("  HV- contactor: CLOSED");
 }
 
-void ContactorManager::openChargePrecharge() {
-    digitalWrite(Pins::CHARGE_PRECHARGE, LOW);
-    DEBUG_PRINTLN("  Charge precharge relay: OPEN");
+void ContactorManager::openHVMinus() {
+    digitalWrite(Pins::HV_MINUS_CONTACTOR, LOW);
+    DEBUG_PRINTLN("  HV- contactor: OPEN");
 }
 
-void ContactorManager::closeMainChargeContactor() {
-    digitalWrite(Pins::MAIN_CHARGE_CONTACTOR, HIGH);
-    DEBUG_PRINTLN("  Main charge contactor: CLOSED");
+void ContactorManager::closeHVPlus() {
+    digitalWrite(Pins::HV_PLUS_CONTACTOR, HIGH);
+    DEBUG_PRINTLN("  HV+ contactor: CLOSED");
 }
 
-void ContactorManager::openMainChargeContactor() {
-    digitalWrite(Pins::MAIN_CHARGE_CONTACTOR, LOW);
-    DEBUG_PRINTLN("  Main charge contactor: OPEN");
+void ContactorManager::openHVPlus() {
+    digitalWrite(Pins::HV_PLUS_CONTACTOR, LOW);
+    DEBUG_PRINTLN("  HV+ contactor: OPEN");
 }
 
-void ContactorManager::closeDischargePrecharge() {
-    digitalWrite(Pins::DISCHARGE_PRECHARGE, HIGH);
-    DEBUG_PRINTLN("  Discharge precharge relay: CLOSED");
+void ContactorManager::closePrecharge() {
+    digitalWrite(Pins::PRECHARGE_CONTACTOR, HIGH);
+    DEBUG_PRINTLN("  Precharge relay: CLOSED");
 }
 
-void ContactorManager::openDischargePrecharge() {
-    digitalWrite(Pins::DISCHARGE_PRECHARGE, LOW);
-    DEBUG_PRINTLN("  Discharge precharge relay: OPEN");
+void ContactorManager::openPrecharge() {
+    digitalWrite(Pins::PRECHARGE_CONTACTOR, LOW);
+    DEBUG_PRINTLN("  Precharge relay: OPEN");
 }
 
-void ContactorManager::closeMainDischargeContactor() {
-    digitalWrite(Pins::MAIN_DISCHARGE_CONTACTOR, HIGH);
-    DEBUG_PRINTLN("  Main discharge contactor: CLOSED");
+void ContactorManager::closeChargeContactor() {
+    digitalWrite(Pins::CHARGE_CONTACTOR, HIGH);
+    DEBUG_PRINTLN("  Charge contactor: CLOSED");
 }
 
-void ContactorManager::openMainDischargeContactor() {
-    digitalWrite(Pins::MAIN_DISCHARGE_CONTACTOR, LOW);
-    DEBUG_PRINTLN("  Main discharge contactor: OPEN");
+void ContactorManager::openChargeContactor() {
+    digitalWrite(Pins::CHARGE_CONTACTOR, LOW);
+    DEBUG_PRINTLN("  Charge contactor: OPEN");
 }
 
 void ContactorManager::openAllHardware() {
-    digitalWrite(Pins::CHARGE_PRECHARGE, LOW);
-    digitalWrite(Pins::MAIN_CHARGE_CONTACTOR, LOW);
-    digitalWrite(Pins::DISCHARGE_PRECHARGE, LOW);
-    digitalWrite(Pins::MAIN_DISCHARGE_CONTACTOR, LOW);
+    digitalWrite(Pins::HV_MINUS_CONTACTOR,  LOW);
+    digitalWrite(Pins::HV_PLUS_CONTACTOR,   LOW);
+    digitalWrite(Pins::PRECHARGE_CONTACTOR, LOW);
+    digitalWrite(Pins::CHARGE_CONTACTOR,    LOW);
     DEBUG_PRINTLN("  All contactor hardware: OPEN");
 }
 
@@ -344,13 +332,32 @@ bool ContactorManager::verifyCurrentZero() {
 
     BMSDataExtended bmsData = bmsManager->getData();
 
-    // Check if current is within threshold (±0.5A considered zero)
-    float currentAmps = bmsData.packCurrent * 0.1f;  // Convert from 0.01A units to A
+    float currentAmps = bmsData.packCurrent * 0.1f;
     bool isZero = (fabs(currentAmps) < Battery::CURRENT_ZERO_THRESHOLD);
 
     DEBUG_PRINTF("  BMS Current: %.2fA %s\n", currentAmps, isZero ? "(ZERO)" : "(FLOWING)");
 
     return isZero;
+}
+
+bool ContactorManager::verifyPrechargeVoltage(bool isCharging) {
+    if (bmsManager == nullptr) return false;
+
+    float packVoltage = bmsManager->getData().packVoltage * 0.1f;
+
+    float busVoltage = 0.0f;
+    if (isCharging) {
+        if (nlg5Manager == nullptr) return false;
+        busVoltage = nlg5Manager->getData().batteryVoltageActual;
+    } else {
+        busVoltage = sharedDMCData.get().dcVoltage;
+    }
+
+    bool ok = (busVoltage >= (packVoltage - Battery::PRECHARGE_TOLERANCE));
+    DEBUG_PRINTF("  Precharge verify: bus=%.1fV pack=%.1fV threshold=%.1fV %s\n",
+                 busVoltage, packVoltage, packVoltage - Battery::PRECHARGE_TOLERANCE,
+                 ok ? "OK" : "WAIT");
+    return ok;
 }
 
 bool ContactorManager::waitForCurrentZero(uint32_t timeoutMs) {
@@ -360,11 +367,10 @@ bool ContactorManager::waitForCurrentZero(uint32_t timeoutMs) {
         if (verifyCurrentZero()) {
             return true;
         }
-
         delay(Timing::CURRENT_ZERO_CHECK_INTERVAL);
     }
 
-    return false;  // Timeout
+    return false;
 }
 
 bool ContactorManager::isBMSArmed() {
@@ -373,8 +379,6 @@ bool ContactorManager::isBMSArmed() {
     }
 
     BMSDataExtended bmsData = bmsManager->getData();
-
-    // Check if BMS channel is enabled (MOS transistors are on)
     bool armed = bmsData.channelEnabled;
 
     DEBUG_PRINTF("  BMS Armed: %s\n", armed ? "YES" : "NO");
@@ -383,32 +387,16 @@ bool ContactorManager::isBMSArmed() {
 }
 
 bool ContactorManager::isChargingSafe() {
-    // Check charge allowance
     if (!inputManager->isChargeAllowed()) {
         return false;
     }
-
-    // Check if current is safe
-    if (currentState == ContactorState::CHARGE_ARMED) {
-        // During charging, verify current is reasonable
-        return true;  // Allow current during charging
-    }
-
     return true;
 }
 
 bool ContactorManager::isDischargingSafe() {
-    // Check discharge allowance
     if (!inputManager->isDischargeAllowed()) {
         return false;
     }
-
-    // Check if current is safe
-    if (currentState == ContactorState::DISCHARGE_ARMED) {
-        // During discharging, verify current is reasonable
-        return true;  // Allow current during discharging
-    }
-
     return true;
 }
 
@@ -427,7 +415,6 @@ void ContactorManager::transitionTo(ContactorState newState) {
     currentState = newState;
     stateEntryTime = millis();
 
-    // Clear error on transition out of error state
     if (previousState == ContactorState::ERROR && newState != ContactorState::ERROR) {
         lastError = ContactorError::NONE;
     }
@@ -437,9 +424,6 @@ void ContactorManager::setError(ContactorError error) {
     DEBUG_PRINTF("ContactorManager: ERROR - Code %d\n", (int)error);
 
     lastError = error;
-
-    // Open all contactors immediately
     openAllHardware();
-
     transitionTo(ContactorState::ERROR);
 }

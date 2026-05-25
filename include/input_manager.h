@@ -106,4 +106,6 @@ private:
     void updateAnalog();
     float mapADCToPercent(int16_t adcValue, int16_t minVal, int16_t maxVal);
     void handleSafetyInterrupt();  // Called by ISR for Port A changes
+    bool recoverI2CBus();          // Clock out stuck I2C transaction and reinitialize
+    bool i2cOk;                    // false after failed reinit — skip I2C reads
 };

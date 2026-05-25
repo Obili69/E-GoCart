@@ -23,16 +23,58 @@ InputManager::InputManager()
     , regenMaxADC(ADC_Cal::REGEN_MAX)
     , lastDebounceTime(0)
     , lastDirectionToggleTime(0)
+    , i2cOk(false)
 {
+}
+
+bool InputManager::recoverI2CBus() {
+    // Clock out any stuck I2C transaction by bit-banging SCL while SDA is LOW.
+    // Called before Wire.begin() so we work directly on GPIO.
+    DEBUG_PRINTLN("InputManager: Attempting I2C bus recovery...");
+
+    pinMode(Pins::SDA, INPUT_PULLUP);
+    pinMode(Pins::SCL, OUTPUT);
+
+    bool sdaStuck = (digitalRead(Pins::SDA) == LOW);
+    if (sdaStuck) {
+        DEBUG_PRINTLN("  I2C SDA stuck LOW — clocking out...");
+        for (int i = 0; i < 9; i++) {
+            digitalWrite(Pins::SCL, HIGH);
+            delayMicroseconds(10);
+            digitalWrite(Pins::SCL, LOW);
+            delayMicroseconds(10);
+        }
+        // Generate STOP condition: SDA LOW→HIGH while SCL HIGH
+        pinMode(Pins::SDA, OUTPUT);
+        digitalWrite(Pins::SDA, LOW);
+        delayMicroseconds(10);
+        digitalWrite(Pins::SCL, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(Pins::SDA, HIGH);
+        delayMicroseconds(10);
+    }
+
+    // Release both lines to I2C driver
+    pinMode(Pins::SDA, INPUT_PULLUP);
+    pinMode(Pins::SCL, INPUT_PULLUP);
+    delay(10);
+
+    bool recovered = (digitalRead(Pins::SDA) == HIGH);
+    DEBUG_PRINTF("  I2C recovery: SDA now %s\n", recovered ? "HIGH (OK)" : "still LOW (FAILED)");
+    return recovered;
 }
 
 bool InputManager::begin() {
     DEBUG_PRINTLN("InputManager: Initializing...");
-    
-    // Initialize I2C
+
+    // Recover I2C bus before initializing (clears any stuck transaction from previous crash)
+    recoverI2CBus();
+
+    // Initialize I2C with a short timeout so reads never block indefinitely
     Wire.begin(Pins::SDA, Pins::SCL);
     Wire.setClock(400000);  // 400kHz
-    
+    Wire.setTimeout(10);    // 10ms max per I2C operation — prevents watchdog cascade on bus lockup
+
     // Initialize MCP23017
     if (!mcp.begin_I2C(I2C::MCP23017_ADDR)) {
         DEBUG_PRINTLN("ERROR: MCP23017 not found!");
@@ -85,12 +127,14 @@ bool InputManager::begin() {
     pinMode(Pins::MCP_INT_A, INPUT_PULLUP);  // Port A interrupt (safety critical)
     pinMode(Pins::MCP_INT_B, INPUT_PULLUP);  // Port B interrupt (user inputs)
     
+    i2cOk = true;
     DEBUG_PRINTLN("InputManager: Initialized successfully");
     return true;
 }
 
 void InputManager::update() {
     updateButtons();
+    if (!i2cOk) return;  // Skip I2C reads if bus failed — prevents watchdog cascade
     updateMCPPortA();  // Safety critical - check first
     updateMCPPortB();  // User inputs
     updateAnalog();

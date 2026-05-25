@@ -40,9 +40,8 @@ void StateManager::begin(BMSManager* bmsMgr, ContactorManager* contactorMgr) {
     DEBUG_PRINTLN("  Powering on BMS...");
     digitalWrite(Pins::BMS_PWR, HIGH);
 
-    // Wait 2 seconds for BMS to boot
-    DEBUG_PRINTLN("  Waiting 2s for BMS boot...");
-    delay(2000);
+    DEBUG_PRINTF("  Waiting %lums for BMS boot...\n", (unsigned long)Timing::BMS_BOOT_WAIT_MS);
+    delay(Timing::BMS_BOOT_WAIT_MS);
 
     DEBUG_PRINTLN("  BMS powered and ready for configuration");
     

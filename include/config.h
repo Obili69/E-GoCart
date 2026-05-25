@@ -44,14 +44,12 @@ namespace Pins {
     constexpr uint8_t BMS_PWR                = 11;  // LPWI0 - BMS main power
     constexpr uint8_t DMC_ENABLE             = 12;  // LWPI1
 
-    // Charge Path Contactors
-    constexpr uint8_t CHARGE_PRECHARGE       = 17;  // LWPI4 - Charge path precharge relay
-    constexpr uint8_t MAIN_CHARGE_CONTACTOR  = 13;  // LWPI2 - Main charge contactor
-    constexpr uint8_t NLG_ENABLE             = 39;  // LWPI2 - Charger enable (same as charge contactor)
-
-    // Discharge Path Contactors
-    constexpr uint8_t DISCHARGE_PRECHARGE    = 14;  // LWPI3 - Discharge path precharge relay
-    constexpr uint8_t MAIN_DISCHARGE_CONTACTOR = 18; // LWPI5 - Main discharge contactor
+    // Shared HV Bus Contactors
+    constexpr uint8_t HV_MINUS_CONTACTOR     = 18;  // LWPI5 - Main HV- (shared drive & charge)
+    constexpr uint8_t HV_PLUS_CONTACTOR      = 14;  // LWPI3 - Main HV+ (shared drive & charge)
+    constexpr uint8_t PRECHARGE_CONTACTOR    = 17;  // LWPI4 - Shared precharge relay
+    constexpr uint8_t CHARGE_CONTACTOR       = 13;  // LWPI2 - Charge path contactor (charge only)
+    constexpr uint8_t NLG_ENABLE             = 39;  // PWO - Charger enable signal
 
     constexpr uint8_t NEXTION_POWER          = 8;   // Changed from 18 - moved to available pin
     
@@ -155,6 +153,7 @@ enum class GearState : uint8_t {
 // TIMING CONSTANTS (milliseconds)
 //-----------------------------------------------------------------------------
 namespace Timing {
+    constexpr uint32_t BMS_BOOT_WAIT_MS          = 4000;   // Wait for BMS to boot after power-on
     constexpr uint32_t BUTTON_DEBOUNCE          = 50;
     constexpr uint32_t PRECHARGE_TIMEOUT        = 5000;   // 5 seconds
     constexpr uint32_t PRECHARGE_CHECK_INTERVAL = 100;    // Check every 100ms
@@ -185,7 +184,7 @@ namespace Battery {
     constexpr float    CELL_BALANCE_V       = 4.18f;  // Balance start voltage
 
     // Pack Voltage Limits (104S)
-    constexpr uint16_t MIN_VOLTAGE          = 14;//312;    // 3.0V * 104S
+    constexpr uint16_t MIN_VOLTAGE          = 312;    // 3.0V * 104S
     constexpr uint16_t MAX_VOLTAGE          = 437;    // 4.2V * 104S
     constexpr uint16_t NOM_VOLTAGE          = 385;    // 3.7V * 104S
     constexpr uint16_t PRECHARGE_TOLERANCE  = 20;     // ±20V for precharge complete
@@ -194,7 +193,7 @@ namespace Battery {
     constexpr float CURRENT_ZERO_THRESHOLD  = 0.2f;  // ±0.5A considered "zero" for safety checks
 
     // Current Limits
-    constexpr uint16_t MAX_DISCHARGE_CURRENT = 350;   // 350A max discharge
+    constexpr uint16_t MAX_DISCHARGE_CURRENT = 20;   // 350A max discharge
     constexpr uint16_t MAX_CHARGE_CURRENT    = 50;    // 50A max charge
 
     // Temperature Limits
@@ -329,7 +328,7 @@ namespace FreeRTOS {
     constexpr uint8_t CORE_APPLICATION     = 1;  // Input, Display, WiFi, Web
 
     // Queue sizes
-    constexpr uint8_t QUEUE_CAN_RX         = 10;  // Incoming CAN messages
+    constexpr uint8_t QUEUE_CAN_RX         = 64;  // Incoming CAN messages (BMS sends ~50 per burst)
     constexpr uint8_t QUEUE_INPUT          = 5;   // Input events
     constexpr uint8_t QUEUE_EVENTS         = 10;  // State machine events
 }

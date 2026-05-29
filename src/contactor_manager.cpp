@@ -91,23 +91,21 @@ void ContactorManager::handleChargePrecharging() {
         return;
     }
 
-    if (elapsed >= Timing::PRECHARGE_DELAY_MS) {
-        if (!verifyPrechargeVoltage(true)) {
-            if (elapsed >= Timing::PRECHARGE_TIMEOUT) {
-                DEBUG_PRINTLN("ContactorManager: Charge precharge TIMEOUT - bus voltage not reached!");
-                setError(ContactorError::PRECHARGE_TIMEOUT);
-            }
-            return;
+    if (!verifyPrechargeVoltage(true)) {
+        if (elapsed >= Timing::PRECHARGE_TIMEOUT) {
+            DEBUG_PRINTLN("ContactorManager: Charge precharge TIMEOUT - bus voltage not reached!");
+            setError(ContactorError::PRECHARGE_TIMEOUT);
         }
-
-        DEBUG_PRINTLN("ContactorManager: Charge precharge verified, closing HV+...");
-        closeHVPlus();
-        delay(100);
-        openPrecharge();
-
-        DEBUG_PRINTLN("ContactorManager: Charge path ARMED");
-        transitionTo(ContactorState::CHARGE_ARMED);
+        return;
     }
+
+    DEBUG_PRINTLN("ContactorManager: Charge precharge verified, closing HV+...");
+    closeHVPlus();
+    delay(100);
+    openPrecharge();
+
+    DEBUG_PRINTLN("ContactorManager: Charge path ARMED");
+    transitionTo(ContactorState::CHARGE_ARMED);
 }
 
 void ContactorManager::handleChargeArmed() {
@@ -133,23 +131,21 @@ void ContactorManager::handleDischargePrecharging() {
         return;
     }
 
-    if (elapsed >= Timing::PRECHARGE_DELAY_MS) {
-        if (!verifyPrechargeVoltage(false)) {
-            if (elapsed >= Timing::PRECHARGE_TIMEOUT) {
-                DEBUG_PRINTLN("ContactorManager: Drive precharge TIMEOUT - bus voltage not reached!");
-                setError(ContactorError::PRECHARGE_TIMEOUT);
-            }
-            return;
+    if (!verifyPrechargeVoltage(false)) {
+        if (elapsed >= Timing::PRECHARGE_TIMEOUT) {
+            DEBUG_PRINTLN("ContactorManager: Drive precharge TIMEOUT - bus voltage not reached!");
+            setError(ContactorError::PRECHARGE_TIMEOUT);
         }
-
-        DEBUG_PRINTLN("ContactorManager: Drive precharge verified, closing HV+...");
-        closeHVPlus();
-        delay(100);
-        openPrecharge();
-
-        DEBUG_PRINTLN("ContactorManager: Drive path ARMED");
-        transitionTo(ContactorState::DISCHARGE_ARMED);
+        return;
     }
+
+    DEBUG_PRINTLN("ContactorManager: Drive precharge verified, closing HV+...");
+    closeHVPlus();
+    delay(100);
+    openPrecharge();
+
+    DEBUG_PRINTLN("ContactorManager: Drive path ARMED");
+    transitionTo(ContactorState::DISCHARGE_ARMED);
 }
 
 void ContactorManager::handleDischargeArmed() {

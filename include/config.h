@@ -155,9 +155,8 @@ enum class GearState : uint8_t {
 namespace Timing {
     constexpr uint32_t BMS_BOOT_WAIT_MS          = 4000;   // Wait for BMS to boot after power-on
     constexpr uint32_t BUTTON_DEBOUNCE          = 50;
-    constexpr uint32_t PRECHARGE_TIMEOUT        = 5000;   // 5 seconds
+    constexpr uint32_t PRECHARGE_TIMEOUT        = 5000;   // 5 seconds max for bus to reach pack voltage
     constexpr uint32_t PRECHARGE_CHECK_INTERVAL = 100;    // Check every 100ms
-    constexpr uint32_t PRECHARGE_DELAY_MS       = 3000;   // 3 second precharge time (from BMS config)
     constexpr uint32_t SLEEP_TIMEOUT            = 500;    // 500ms after STOP
     constexpr uint32_t CAN_FAST_CYCLE           = 10;     // DMC control
     constexpr uint32_t CAN_SLOW_CYCLE           = 100;    // Status updates
@@ -396,6 +395,7 @@ namespace RuntimeConfig {
 
 // CAN2 (BMS) - Set to 0 if CAN2 hardware not yet connected
 #define ENABLE_CAN2         1  // 1 = CAN2 enabled, 0 = CAN2 disabled (optional)
+
 
 #if DEBUG_SERIAL
     #define DEBUG_PRINT(x)   Serial.print(x)

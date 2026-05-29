@@ -194,20 +194,14 @@ void InputManager::updateMCPPortA() {
 }
 
 void InputManager::updateMCPPortB() {
-    // Check if interrupt triggered on Port B
-    if (digitalRead(Pins::MCP_INT_B) == HIGH) {
-        return;  // No interrupt pending
-    }
+    // Always poll Port B directly - do NOT gate on interrupt.
+    // Interrupts are mirrored (INTA=INTB): a Port A read clears the shared
+    // interrupt flag, so a simultaneous brake press on Port B would be missed
+    // entirely if we returned early here. The brake is safety-critical.
+    uint8_t portB = mcp.readGPIO(1);
 
-    // Read Port B
-    uint8_t portB = mcp.readGPIO(1);  // Read GPIOB register
-
-    // Extract button states (active HIGH - buttons connect to 3.3V when pressed)
     brakePressed = (portB & (1 << MCP::BRAKE_SWITCH)) != 0;
     directionToggleCurrent = (portB & (1 << MCP::DIRECTION_TOGGLE)) != 0;
-
-    // Clear interrupt
-    mcp.readGPIO(1);
 }
 
 void InputManager::handleSafetyInterrupt() {
@@ -236,7 +230,22 @@ bool InputManager::isDirectionTogglePressed() {
 
 void InputManager::updateAnalog() {
     // Read throttle pot and store raw value
-    throttleRawADC = ads.readADC(ADC::THROTTLE_POT);
+    int16_t newThrottle = ads.readADC(ADC::THROTTLE_POT);
+
+    // Stale-read detection: if the value is identical to the previous read AND
+    // at a high level, count consecutive matches. After 5 in a row (~100ms) treat
+    // it as a stuck/failed ADC and zero the throttle. A real pot always dithers.
+    static uint8_t throttleSameCount = 0;
+    if (newThrottle == throttleRawADC && newThrottle > (throttleMaxADC / 2)) {
+        if (++throttleSameCount >= 5) {
+            throttlePercent = 0.0f;
+            return;
+        }
+    } else {
+        throttleSameCount = 0;
+    }
+
+    throttleRawADC = newThrottle;
     throttlePercent = mapADCToPercent(throttleRawADC, throttleMinADC, throttleMaxADC);
 
     // Read regen pot and store raw value

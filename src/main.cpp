@@ -290,7 +290,17 @@ void taskCANTx(void* parameter) {
         // Send DMC control if in DRIVE state
         if (stateManager.isDriving()) {
             int16_t torqueDemand = vehicleControl.getTorqueDemand();
-            bool enableDMC = (torqueDemand != 0);
+            bool inNeutral = vehicleControl.getCurrentGear() == GearState::NEUTRAL;
+            bool brakeActive = inputManager.isBrakePressed();
+
+            // Hard brake cutoff: re-check brake directly here regardless of
+            // what vehicleControl computed — prevents runaway if brake state
+            // was missed in the input task.
+            if (brakeActive) {
+                torqueDemand = 0;
+            }
+
+            bool enableDMC = !inNeutral && !brakeActive;
             canManager.sendDMCControl(torqueDemand, enableDMC);
         } else {
             // Send zero torque if not driving

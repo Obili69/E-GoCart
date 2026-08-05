@@ -216,8 +216,8 @@ namespace Battery {
 // MOTOR PARAMETERS
 //-----------------------------------------------------------------------------
 namespace Motor {
-    constexpr int16_t MAX_TORQUE_NM      = 250;   // Forward max torque
-    constexpr int16_t MAX_REGEN_NM       = 100;   // Regen max torque
+    constexpr int16_t MAX_TORQUE_NM      = 30;   // Forward max torque
+    constexpr int16_t MAX_REGEN_NM       = 15;   // Regen max torque
     constexpr int16_t MAX_REVERSE_NM     = 60;   // Reverse max torque
     constexpr int16_t MAX_RPM            = 30000;
     constexpr float   DEADZONE_PERCENT   = 2.0f;  // 2% deadzone around zero

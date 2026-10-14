@@ -1,0 +1,494 @@
+[Root]
+Most Recent Package=ChargeStarSetup
+
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=D:\nlg5_1\DistribTest\Mai02\Support
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Configure DAO ISAMs]
+Applicable=No
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Files Found]
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Files Released]
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Missing Dependency Information]
+C:\WINDOWS\mscomm32.ocx=
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Out-of-Date Dependency Information]
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Files Added]
+c:\programme\national instruments\shared\mesa\mesa.dll=
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Files Removed]
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Files In Project]
+C:\WINDOWS\SYSTEM\msvbvm60.dll=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINDOWS\SYSTEM\VB6DE.DLL=Yes
+C:\WINDOWS\SYSTEM\cwui.ocx=Yes
+C:\WINDOWS\SYSTEM\mfc42.dll=Yes
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=Yes
+C:\WINDOWS\mscomm32.ocx=Yes
+C:\WINDOWS\SYSTEM\comdlg32.ocx=Yes
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomctl.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomct2.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=Yes
+D:\nlg5_1\ChargeStar104.exe=Yes
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Configure Registry Files]
+Applicable=No
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Configure Remote Servers]
+Applicable=No
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Install Locations]
+D:\nlg5_1\Test_soft.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\msvbvm60.dll=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINDOWS\SYSTEM\VB6DE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\cwui.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mfc42.dll=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=$(WinSysPath)
+C:\WINDOWS\mscomm32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\comdlg32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomctl.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomct2.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+D:\nlg5_1\ChargeStar104.exe=$(AppPath)
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=$(WinSysPath)
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Configure Shared Files]
+Applicable=Yes
+D:\nlg5_1\Test_soft.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=Yes
+D:\nlg5_1\ChargeStar104.exe=Yes
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG 5 V1.04
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|DepFile]
+DepCabFile=ChargeStar104.CAB
+DepCabRun=ChargeStar104.INF
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|IconGroups]
+Group0=BRUSA ChargeStar NLG 5
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|BRUSA ChargeStar NLG 5]
+Icon1=Test_soft.exe
+Title1=BRUSA ChargeStar NLG 5
+StartIn1=$(AppPath)
+Key1=Icon1
+
+[Package|Standardm‰ﬂiges Setup-Paket 1|Package]
+PackageFolder=D:\nlg5_1\DistribTest\Mai02\Support
+ProjectFolder=D:\nlg5_1
+ServerSideCab=
+File1=D:\nlg5_1\DistribTest\Mai02\Support\setup.exe
+File2=D:\nlg5_1\DistribTest\Mai02\Support\Setup.Lst
+File3=D:\nlg5_1\DistribTest\Mai02\Support\ChargeStar104.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=D:\nlg5_1\DistribTest\Mai02\Support
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Configure DAO ISAMs]
+Applicable=No
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Files Found]
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Files Released]
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Missing Dependency Information]
+C:\WINDOWS\mscomm32.ocx=
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Out-of-Date Dependency Information]
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Files Added]
+c:\programme\national instruments\shared\mesa\mesa.dll=
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Files Removed]
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Files In Project]
+C:\WINDOWS\SYSTEM\msvbvm60.dll=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINDOWS\SYSTEM\VB6DE.DLL=Yes
+C:\WINDOWS\SYSTEM\cwui.ocx=Yes
+C:\WINDOWS\SYSTEM\mfc42.dll=Yes
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=Yes
+C:\WINDOWS\mscomm32.ocx=Yes
+C:\WINDOWS\SYSTEM\comdlg32.ocx=Yes
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomctl.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomct2.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=Yes
+D:\nlg5_1\ChargeStar104.exe=Yes
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Configure Registry Files]
+Applicable=No
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Configure Remote Servers]
+Applicable=No
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Install Locations]
+D:\nlg5_1\Test_soft.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\msvbvm60.dll=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINDOWS\SYSTEM\VB6DE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\cwui.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mfc42.dll=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=$(WinSysPath)
+C:\WINDOWS\mscomm32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\comdlg32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomctl.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomct2.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+D:\nlg5_1\ChargeStar104.exe=$(AppPath)
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=$(WinSysPath)
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Configure Shared Files]
+Applicable=Yes
+D:\nlg5_1\Test_soft.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=Yes
+D:\nlg5_1\ChargeStar104.exe=Yes
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG 5 V1.04
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|DepFile]
+DepCabFile=ChargeStar104.CAB
+DepCabRun=ChargeStar104.INF
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|IconGroups]
+Group0=BRUSA ChargeStar NLG 5
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|BRUSA ChargeStar NLG 5]
+Icon1=Test_soft.exe
+Title1=BRUSA ChargeStar NLG 5
+StartIn1=$(AppPath)
+Key1=Icon1
+
+[Package|Standardm‰ﬂiges Setup-Paket 2|Package]
+PackageFolder=D:\nlg5_1\DistribTest\Mai02\Support
+ProjectFolder=D:\nlg5_1
+ServerSideCab=
+File1=D:\nlg5_1\DistribTest\Mai02\Support\setup.exe
+File2=D:\nlg5_1\DistribTest\Mai02\Support\Setup.Lst
+File3=D:\nlg5_1\DistribTest\Mai02\Support\ChargeStar104.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+
+[Package|DEP-Datei 1|Root]
+SubWizProgID=PDWizard.DepPkgSubWiz
+BuildFolder=D:\nlg5_1\DistribTest\Mai02\Support
+
+[Package|DEP-Datei 1|Configure DAO ISAMs]
+Applicable=No
+
+[Package|DEP-Datei 1|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|DEP-Datei 1|Files Found]
+
+[Package|DEP-Datei 1|Files Released]
+
+[Package|DEP-Datei 1|Missing Dependency Information]
+C:\WINDOWS\mscomm32.ocx=
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=
+
+[Package|DEP-Datei 1|Out-of-Date Dependency Information]
+
+[Package|DEP-Datei 1|Files Added]
+c:\programme\national instruments\shared\mesa\mesa.dll=
+d:\nlg5_1\help_file\chargestarhelp.cnt=
+
+[Package|DEP-Datei 1|Files Removed]
+
+[Package|DEP-Datei 1|Files In Project]
+C:\WINDOWS\SYSTEM\msvbvm60.dll=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINDOWS\SYSTEM\VB6DE.DLL=Yes
+C:\WINDOWS\SYSTEM\cwui.ocx=Yes
+C:\WINDOWS\SYSTEM\mfc42.dll=Yes
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=Yes
+C:\WINDOWS\mscomm32.ocx=Yes
+C:\WINDOWS\SYSTEM\comdlg32.ocx=Yes
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomctl.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomct2.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=Yes
+D:\nlg5_1\ChargeStar104.exe=Yes
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=Yes
+
+[Package|DEP-Datei 1|Configure Registry Files]
+Applicable=No
+
+[Package|DEP-Datei 1|Configure Remote Servers]
+Applicable=No
+
+[Package|DEP-Datei 1|Install Locations]
+D:\nlg5_1\Test_soft.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\msvbvm60.dll=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINDOWS\SYSTEM\VB6DE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\cwui.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mfc42.dll=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=$(WinSysPath)
+C:\WINDOWS\mscomm32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\comdlg32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomctl.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomct2.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+D:\nlg5_1\ChargeStar104.exe=$(AppPath)
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=$(AppPath)
+
+[Package|DEP-Datei 1|Configure Shared Files]
+Applicable=Yes
+D:\nlg5_1\Test_soft.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=No
+D:\nlg5_1\ChargeStar104.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=No
+
+[Package|DEP-Datei 1|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG 5 V1.04
+
+[Package|DEP-Datei 1|DepFile]
+DepCabFile=ChargeStar104.CAB
+DepCabRun=ChargeStar104.INF
+
+[Package|DEP-Datei 1|IconGroups]
+Group0=BRUSA ChargeStar NLG 5
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|DEP-Datei 1|BRUSA ChargeStar NLG 5]
+Icon1=ChargeStar104.exe
+Title1=BRUSA ChargeStar NLG 5
+StartIn1=$(AppPath)
+Key1=Icon1
+
+[Package|DEP-Datei 1|Package]
+PackageFolder=D:\nlg5_1\DistribTest\Mai02\Support
+ProjectFolder=D:\nlg5_1
+ServerSideCab=
+File1=D:\nlg5_1\DistribTest\Mai02\Support\ChargeStar104.DEP
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+
+[Package|ChargeStarSetup|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=D:\nlg5_1\DistribTest\Mai02\Support
+
+[Package|ChargeStarSetup|Configure DAO ISAMs]
+Applicable=No
+
+[Package|ChargeStarSetup|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|ChargeStarSetup|Files Found]
+
+[Package|ChargeStarSetup|Files Released]
+
+[Package|ChargeStarSetup|Missing Dependency Information]
+C:\WINDOWS\mscomm32.ocx=
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=
+
+[Package|ChargeStarSetup|Out-of-Date Dependency Information]
+
+[Package|ChargeStarSetup|Files Added]
+c:\programme\national instruments\shared\mesa\mesa.dll=
+d:\nlg5_1\help_file\chargestarhelp.cnt=
+
+[Package|ChargeStarSetup|Files Removed]
+
+[Package|ChargeStarSetup|Files In Project]
+C:\WINDOWS\SYSTEM\msvbvm60.dll=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINDOWS\SYSTEM\VB6DE.DLL=Yes
+C:\WINDOWS\SYSTEM\cwui.ocx=Yes
+C:\WINDOWS\SYSTEM\mfc42.dll=Yes
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=Yes
+C:\WINDOWS\mscomm32.ocx=Yes
+C:\WINDOWS\SYSTEM\comdlg32.ocx=Yes
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomctl.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomct2.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=Yes
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=Yes
+D:\nlg5_1\ChargeStar105.exe=Yes
+
+[Package|ChargeStarSetup|Configure Registry Files]
+Applicable=No
+
+[Package|ChargeStarSetup|Configure Remote Servers]
+Applicable=No
+
+[Package|ChargeStarSetup|Install Locations]
+D:\nlg5_1\Test_soft.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\msvbvm60.dll=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINDOWS\SYSTEM\VB6DE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\cwui.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mfc42.dll=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=$(WinSysPath)
+C:\WINDOWS\mscomm32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\comdlg32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomctl.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomct2.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+D:\nlg5_1\ChargeStar104.exe=$(AppPath)
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=$(AppPath)
+D:\nlg5_1\ChargeStar105.exe=$(AppPath)
+
+[Package|ChargeStarSetup|Configure Shared Files]
+Applicable=Yes
+D:\nlg5_1\Test_soft.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=No
+D:\nlg5_1\ChargeStar104.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=No
+D:\nlg5_1\ChargeStar105.exe=No
+
+[Package|ChargeStarSetup|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG 5 V1.05
+
+[Package|ChargeStarSetup|DepFile]
+DepCabFile=ChargeStar104.CAB
+DepCabRun=ChargeStar104.INF
+
+[Package|ChargeStarSetup|Package]
+PackageFolder=D:\nlg5_1\DistribTest\Mai02\Support
+ProjectFolder=D:\nlg5_1
+ServerSideCab=
+File1=D:\nlg5_1\DistribTest\Mai02\Support\setup.exe
+File2=D:\nlg5_1\DistribTest\Mai02\Support\Setup.Lst
+File3=D:\nlg5_1\DistribTest\Mai02\Support\ChargeStar105.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+[Package|ChargeStarSetup|IconGroups]
+Group0=BRUSA ChargeStar NLG 5
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|ChargeStarSetup|BRUSA ChargeStar NLG 5]
+Icon1=ChargeStar105.exe
+Title1=BRUSA ChargeStar NLG 5
+StartIn1=$(AppPath)
+Key1=Icon1

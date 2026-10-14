@@ -1,0 +1,13 @@
+start_form = 132, 138, 1122, 757, C, 176, 184, 1099, 803, C
+kennlinie = 41, 17, 1276, 916, , 68, -11, 995, 860, C
+SeriellKomm = 22, 1, 1251, 891, , 105, 4, 913, 922, C
+monitor1 = 154, 161, 1166, 716, C, 87, 74, 1247, 693, C
+HilfsFunktionen = 110, 115, 1276, 734, 
+frmAbout = -156, 639, 543, 1247, C, 44, 46, 743, 654, C
+DatenKapselUndKonstanten = 4, 0, 1276, 918, 
+NLGundPCKonstanten = 33, 119, 1242, 532, 
+GeraeteInfo = 132, 138, 1055, 757, , 44, 46, 967, 665, C
+UpDownLoad = 154, 161, 1144, 780, C, 198, 207, 854, 826, C
+DlgEigenschGeraetBatt = 44, 46, 1191, 665, , 88, 92, 786, 711, C
+FrmOptions = 2, -2, 1274, 918, C, 160, 45, 683, 470, C
+FrmSpgKonvert = 198, 207, 1210, 762, C, 110, 115, 753, 734, C

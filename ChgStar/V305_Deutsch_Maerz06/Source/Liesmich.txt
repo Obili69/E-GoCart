@@ -1,0 +1,99 @@
+
+Liesmich-Datei zu BRUSA ChargeStar NLG5 V3.05, 	13. März 2006
+
+
+Inhalt
+
+1. Installieren
+ 1.1 Anforderungen
+ 1.2 Neu-Installation
+ 1.3 Update von früherer Version
+2. Deinstallieren
+3. Fehlerbehebung
+ 3.1 Laden und Speichern von Kennlinien-Dateien nicht möglich
+ 3.2 Verbindung zum NLG funktioniert nicht
+ 3.3 Firmware Version nicht kompatibel
+ 3.4 Dezimalstellen falsch gespeichert / falsches Trennzeichen angezeigt
+4. Neuerungen
+5. Weitere Informationen
+
+________________________________________
+
+1. Installieren
+
+ 1.1 Anforderungen
+
+BRUSA ChargeStar NLG5 unterstützt die Windows-Versionen 98, Me, 2000 und XP. ChargeStar wird als selbstentpackendes Archiv geliefert, als eine Datei mit Namen "ChSt305D.exe". Das zu programmierende NLG5 muss mindestes Firmware-Version 3.00.00 aufweisen (kann unter "Extras | Geräte Info" abgefragt werden, wenn die Daten-Verbindung NLG-PC hergestellt ist).
+
+ 1.2 Neu-Installation
+
+Schliessen Sie alle geöffneten Applikationen und doppelklicken Sie dann auf ChSt305D.exe. Folgen Sie den Anweisungen des Assistenten, der Sie durch den Entpack- und Installationsvorgang leiten wird.
+
+ 1.3 Update von früherer Version
+
+Sichern Sie auf jeden Fall Ihre selbst erstellten Kennlinien-Dateien (*.pfl), um diese vor Verlust zu schützen.  Sie können entweder die bestehende Installation updaten oder die neue Version zusätzlich (parallel) installieren.
+Für eine Parallel-Installation müssen Sie einen anderen Pfad und eine andere Programm-Gruppe für die neue Version wählen. 
+Für ein Update einer 1.x oder 2.x Version können Sie genau wie bei einer Neu-Installation verfahren (siehe 1.2). Wenn Sie von einer 3.x Version updaten, sollten Sie die ältere Version zuerst deinstallieren (siehe 2.).
+
+
+2. Deinstallieren des Programms
+
+Klicken Sie zum Entfernen von ChargeStar auf das Symbol "Software" in der Systemsteuerung. Daraus wählen Sie "BRUSA ChargeStar NLG5", und klicken Sie auf die Schaltfläche "Entfernen".
+
+
+3. Fehlerbehebung
+
+ 3.1 Laden und Speichern von Kennlinien nicht möglich
+
+Fehlerbild: wenn eine Kennlinien-Datei geladen werden soll, meldet ChargeStar "...ist keine gültige Kennlinien-Datei"; beim Versuch eine Kennlinie zu speichern meldet das Programm "Objekterstellung durch ActiveX-Komponente nicht möglich". Gehen Sie in diesem Fall folgendermassen vor: wählen Sie in der Windows-Symbolleiste  "Start | Einstellungen | Systemsteuerung | Software"; klicken Sie auf die Registerkarte "Windows Setup" und öffnen Sie mit Doppelklick das Untermenü "Zubehör". Aktivieren Sie darin den Eintrag "Windows Scripting Host" und folgen Sie allfälligen Anweisungen, schliessen Sie alle Fenster mit OK und starten Sie den PC neu.
+
+ 3.2 Verbindung zum NLG funktioniert nicht
+
+Fehlerbild: Trotz korrekt angeschlossener Geräte funktioniert die Verbindung vom PC zum NLG nicht. Es erscheint die Fehlermeldung
+
+  a) "Verbindung kann nicht aufgebaut werden"
+Falls die Verbindung nach 2 Wiederholungs-Versuchen nicht steht, überprüfen Sie nochmals die Verkabelung und die PC-Konfiguration (siehe unten), starten Sie den PC neu und setzen Sie dann das NLG zurück (Stromzufuhr aus- und wieder einschalten), dann starten Sie ChargeStar.
+
+   Verkabelung
+Zum Programmieren kann das NLG auf zwei Arten mit Strom versorgt werden: entweder über den Steuerstecker mit einer externen 12VDC Quelle oder mit Netzspannung 100-240VAC. Sie können des Gerät ohne angeschlossene Batterie betreiben, bei Versorgung über 12V brauchen Sie dazu nichts weiter vorzukehren. Wenn Sie es am Netz betreiben, müssen Sie entweder die Fahrbatterie angeschlossen haben oder das PowerON-Signal muss AUS sein, d.h. die Kabelbrücke zwischen Pin2 und 3 auf dem mitgelieferten Signalstecker muss unterbrochen werden  (siehe Betriebsanleitung).
+
+   PC Konfiguration
+Überprüfen Sie die Einstellung des COM - Anschlusses am PC unter "Start | Einstellungen | Systemsteuerung | System | Geräte-Manager | Anschlüsse COM und LPT | COM-Anschluss COM1 | Ressourcen"; dieser muss auf  "Basiskonfiguration0000" und "automatisch einstellen" stehen und als COM1 angezeigt werden.
+
+  b) "serieller Anschluss ist bereits von einer Anwendung belegt"
+Eine Anwendung hat den Anschluss COM1 belegt und noch nicht wieder freigegeben. Beenden Sie alle Programme, die COM1 belegen (könnten) wie Modems, Terminal-Programme etc. und starten Sie ggf. den PC neu.
+
+  c) "serieller Anschluss ist nicht bereit"
+Der Anschluss COM1 kann nicht angesprochen werden, d.h. er wird von Windows als nicht funktionstüchtig oder nicht vorhanden gemeldet. Überprüfen Sie die PC-Konfiguration wie oben beschrieben und starten Sie ggf. den PC neu.
+
+ 3.3 Firmware Version nicht kompatibel
+Falls sich die Verbindung NLG-PC zwar aufbauen lässt, aber eine Warnung erscheint "ACHTUNG: die Firmware Version des NLG ist nicht voll kompatibel..." bedeutet das, dass die Firmware des NLG5 gewisse Funktionen der neuen ChargeStar Software nicht unterstützt. In diesem Fall sollten Sie entweder die Firmware des NLG5 updaten (für nähere Informationen wenden Sie sich bitte direkt an BRUSA Elektronik AG) oder weiterhin die ältere Version von ChargeStar benutzen. Wir raten ausdrücklich davon ab, die neue ChargeStar Version zur Programmierung von NLG's mit älterer Firmware zu benutzen. Wollen Sie dies trotzdem tun, müssen Sie alle Warnungen mit "Ignorieren" quittieren und darauf achten, dass Sie keine Funktionen benutzen (z.B. Art und Anzahl der Umschalt-Bedingungen), die in der alten Version nicht vorhanden waren; ein solchermassen fehlprogrammiertes NLG würde nicht richtig funktionieren!
+
+ 3.4 Dezimalstellen falsch gespeichert / falsches Trennzeichen angezeigt
+Dies passiert i.d.R., wenn auf einem Mehrbenutzer-System wie Win2000 oder WinXP die Standard-Ländereinstellung des Systems nicht mit der Ländereinstellung des aktuellen Benutzers übereinstimmt. Um ein korrektes Verhalten zu erzielen, legen Sie unter "Start | Einstellungen | Systemsteuerung | Ländereinstellungen | Allgemein | Standard festlegen" das gleiche Gebietsschema als Grundeinstellung fest wie dasjenige welches unter "Start | Einstellungen | Systemsteuerung | Ländereinstellungen | Eingabe | Eingabegebietsschema" als Standard eingestellt ist (dieses entspricht i.d.R. Ihrer Tastatur und sollte deswegen nicht geändert werden). 
+Sind erweiterte Länder-Optionen verfügbar, muss bei diesen exakt dieselbe Länder/Sprache Einstellung wie oben gemacht werden.
+
+
+4.   Neuerungen
+
+ChargeStar V3.05 enthält gegenüber V2.x folgende Neuerungen:
+- das neue 1.6kW Ladegerät NLG503-Light wird unterstützt
+- die CAN Parameter des Ladegeräts (Baudrate und Identifier) sind frei einstellbar
+- erweiterte Hilfe-Funktion
+- Anpassungen für Ländereinstellungen Win2000/WinXP
+- Installation für Win2000/WinXP angepasst
+- Anpassungen für NLG5 Booster Betrieb
+
+ChargeStar V2.x enthält gegenüber der Version 1.x folgende Neuerungen:
+- wird die Batterie-Nennspannung geändert, passt ChargeStar - falls gewünscht - sämtliche davon abhängigen Werte der Kennlinie an die neue Nennspannung an
+- max. 5 Bedingungen für Wechsel der Kennlinien-Abschnitte (vorher: max. 3)
+- neue Bedingungen für Abschnitts-Wechsel wie Temperaturdifferenz und Spannungsanstieg, neu auch digitale Eingänge des NLG5 
+- unter "Extras | Eigenschaften" ist ein Begleit-Text zur Kennlinie verfügbar
+- falls das NLG5 angeschlossen und eingeloggt ist, kann unter "Extras | Eigenschaften | Alle Eigenschaften drucken" ein Zusammenzug der Geräte- und Kennlinien-Eigenschaften gedruckt werden
+- ChargeStar in Deutsch und Englisch verfügbar
+- erweiterte Hilfe-Funktion
+
+
+5.   Weitere Informationen
+  
+Sie finden Software, Kennlinien, Kontakt-Adressen, Bedienungsanleitungen sowie weitere Informationen auf unserer Webseite unter www.brusa.biz.

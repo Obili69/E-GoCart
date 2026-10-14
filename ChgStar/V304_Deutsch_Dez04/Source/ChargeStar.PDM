@@ -1,0 +1,1114 @@
+[Root]
+Most Recent Package=ChargeStar NLG5 V3 Deutsch
+
+
+[Package|ChargeStar 107 August 02|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=D:\nlg5_1\DistribTest\Aug02
+
+[Package|ChargeStar 107 August 02|Configure DAO ISAMs]
+Applicable=No
+
+[Package|ChargeStar 107 August 02|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|ChargeStar 107 August 02|Files Found]
+
+[Package|ChargeStar 107 August 02|Files Released]
+
+[Package|ChargeStar 107 August 02|Missing Dependency Information]
+
+[Package|ChargeStar 107 August 02|Out-of-Date Dependency Information]
+
+[Package|ChargeStar 107 August 02|Files Added]
+d:\nlg5_1\myprofiles\bsppb72v.pfl=
+d:\nlg5_1\help_file\chargestarhelp.cnt=
+d:\nlg5_1\default.ini=
+d:\nlg5_1\defneu.ini=
+d:\nlg5_1\myprofiles\dryfit_120v_70ah.pfl=
+d:\nlg5_1\myprofiles\dryfit_144v_70ah.pfl=
+d:\nlg5_1\help_file\chargestarhelp.gid=
+d:\nlg5_1\help_file\chargestarhelp.fts=
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=
+
+[Package|ChargeStar 107 August 02|Files Removed]
+d:\nlg5_1\myprofiles\bsppb72v.pfl=
+
+[Package|ChargeStar 107 August 02|Files In Project]
+C:\WINDOWS\SYSTEM\MSVBVM60.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINDOWS\SYSTEM\VB6DE.DLL=Yes
+C:\WINDOWS\SYSTEM\cwui.ocx=Yes
+C:\WINDOWS\SYSTEM\mfc42.dll=Yes
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomm32.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCOMDE.DLL=Yes
+C:\WINDOWS\SYSTEM\COMDLG32.OCX=Yes
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=Yes
+C:\WINDOWS\SYSTEM\MSCOMCTL.OCX=Yes
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=Yes
+C:\WINDOWS\SYSTEM\MSCOMCT2.OCX=Yes
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+D:\nlg5_1\myprofiles\BspPb72V.pfl=No
+D:\nlg5_1\ChargeStar1.exe=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=Yes
+D:\nlg5_1\default.ini=Yes
+D:\nlg5_1\defneu.ini=Yes
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=Yes
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=Yes
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=Yes
+
+[Package|ChargeStar 107 August 02|Configure Registry Files]
+Applicable=No
+
+[Package|ChargeStar 107 August 02|Configure Remote Servers]
+Applicable=No
+
+[Package|ChargeStar 107 August 02|Install Locations]
+D:\nlg5_1\ChargeStar106.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\MSVBVM60.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINDOWS\SYSTEM\VB6DE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\cwui.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mfc42.dll=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomm32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\COMDLG32.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMCTL.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMCT2.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+D:\nlg5_1\myprofiles\BspPb72V.pfl=$(AppPath)\profiles
+D:\nlg5_1\ChargeStar1.exe=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=$(AppPath)
+D:\nlg5_1\default.ini=$(AppPath)
+D:\nlg5_1\defneu.ini=$(AppPath)
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=$(AppPath)\profiles
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=$(AppPath)\profiles
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=$(AppPath)
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=$(WinSysPath)
+
+[Package|ChargeStar 107 August 02|Configure Shared Files]
+Applicable=Yes
+D:\nlg5_1\ChargeStar106.exe=No
+D:\nlg5_1\myprofiles\BspPb72V.pfl=No
+D:\nlg5_1\ChargeStar1.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=No
+D:\nlg5_1\default.ini=No
+D:\nlg5_1\defneu.ini=No
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=No
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=No
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=No
+
+[Package|ChargeStar 107 August 02|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG 5
+
+[Package|ChargeStar 107 August 02|Package]
+PackageFolder=D:\nlg5_1\DistribTest\Aug02
+ProjectFolder=D:\nlg5_1
+ServerSideCab=
+File1=D:\nlg5_1\DistribTest\Aug02\setup.exe
+File2=D:\nlg5_1\DistribTest\Aug02\Setup.Lst
+File3=D:\nlg5_1\DistribTest\Aug02\ChargeStar1.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+[Package|ChargeStar 107 August 02|IconGroups]
+Group0=BRUSA ChargeStar NLG 5
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|ChargeStar 107 August 02|BRUSA ChargeStar NLG 5]
+Icon1=ChargeStar1.exe
+Title1=BRUSA ChargeStar NLG 5
+StartIn1=$(AppPath)
+Key1=Icon1
+Icon2=ChargeStarHelp.hlp
+Title2=ChargeStar Help
+StartIn2=$(AppPath)
+Key2=Icon4
+
+
+[Package|ChargeStar 108 TNO Nov 02|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=D:\nlg5_1\Distrib_108_TNO
+
+[Package|ChargeStar 108 TNO Nov 02|Configure DAO ISAMs]
+Applicable=No
+
+[Package|ChargeStar 108 TNO Nov 02|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|ChargeStar 108 TNO Nov 02|Files Found]
+
+[Package|ChargeStar 108 TNO Nov 02|Files Released]
+
+[Package|ChargeStar 108 TNO Nov 02|Missing Dependency Information]
+
+[Package|ChargeStar 108 TNO Nov 02|Out-of-Date Dependency Information]
+
+[Package|ChargeStar 108 TNO Nov 02|Files Added]
+d:\nlg5_1\myprofiles\bsppb72v.pfl=
+d:\nlg5_1\help_file\chargestarhelp.cnt=
+d:\nlg5_1\default.ini=
+d:\nlg5_1\defneu.ini=
+d:\nlg5_1\myprofiles\dryfit_120v_70ah.pfl=
+d:\nlg5_1\myprofiles\dryfit_144v_70ah.pfl=
+d:\nlg5_1\help_file\chargestarhelp.gid=
+d:\nlg5_1\help_file\chargestarhelp.fts=
+c:\programme\national instruments\shared\mesa\mesa.dll=
+
+[Package|ChargeStar 108 TNO Nov 02|Files Removed]
+d:\nlg5_1\myprofiles\bsppb72v.pfl=
+
+[Package|ChargeStar 108 TNO Nov 02|Files In Project]
+C:\WINDOWS\SYSTEM\MSVBVM60.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINDOWS\SYSTEM\VB6DE.DLL=Yes
+C:\WINDOWS\SYSTEM\cwui.ocx=Yes
+C:\WINDOWS\SYSTEM\mfc42.dll=Yes
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomm32.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCOMDE.DLL=Yes
+C:\WINDOWS\SYSTEM\COMDLG32.OCX=Yes
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=Yes
+C:\WINDOWS\SYSTEM\MSCOMCTL.OCX=Yes
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=Yes
+C:\WINDOWS\SYSTEM\MSCOMCT2.OCX=Yes
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+D:\nlg5_1\myprofiles\BspPb72V.pfl=No
+D:\nlg5_1\ChargeStar1.exe=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=Yes
+D:\nlg5_1\default.ini=Yes
+D:\nlg5_1\defneu.ini=Yes
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=Yes
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=Yes
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=Yes
+
+[Package|ChargeStar 108 TNO Nov 02|Configure Registry Files]
+Applicable=No
+
+[Package|ChargeStar 108 TNO Nov 02|Configure Remote Servers]
+Applicable=No
+
+[Package|ChargeStar 108 TNO Nov 02|Install Locations]
+D:\nlg5_1\ChargeStar106.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\MSVBVM60.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINDOWS\SYSTEM\VB6DE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\cwui.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mfc42.dll=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomm32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\COMDLG32.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMCTL.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMCT2.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+D:\nlg5_1\myprofiles\BspPb72V.pfl=$(AppPath)\profiles
+D:\nlg5_1\ChargeStar1.exe=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=$(AppPath)
+D:\nlg5_1\default.ini=$(AppPath)
+D:\nlg5_1\defneu.ini=$(AppPath)
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=$(AppPath)\profiles
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=$(AppPath)\profiles
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=$(AppPath)
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=$(WinSysPath)
+
+[Package|ChargeStar 108 TNO Nov 02|Configure Shared Files]
+Applicable=Yes
+D:\nlg5_1\ChargeStar106.exe=No
+D:\nlg5_1\myprofiles\BspPb72V.pfl=No
+D:\nlg5_1\ChargeStar1.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=No
+D:\nlg5_1\default.ini=No
+D:\nlg5_1\defneu.ini=No
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=No
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=No
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=No
+
+[Package|ChargeStar 108 TNO Nov 02|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG 5
+
+[Package|ChargeStar 108 TNO Nov 02|IconGroups]
+Group0=BRUSA ChargeStar NLG 5
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|ChargeStar 108 TNO Nov 02|BRUSA ChargeStar NLG 5]
+Icon1=ChargeStar1.exe
+Title1=BRUSA ChargeStar NLG 5
+StartIn1=$(AppPath)
+Key1=Icon1
+Icon2=ChargeStarHelp.hlp
+Title2=ChargeStar Help
+StartIn2=$(AppPath)
+Key2=Icon4
+
+[Package|ChargeStar 108 TNO Nov 02|Package]
+PackageFolder=D:\nlg5_1\Distrib_108_TNO
+ProjectFolder=D:\nlg5_1
+ServerSideCab=
+File1=D:\nlg5_1\Distrib_108_TNO\setup.exe
+File2=D:\nlg5_1\Distrib_108_TNO\Setup.Lst
+File3=D:\nlg5_1\Distrib_108_TNO\ChargeStar1.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+
+[Package|ChargeStar Deutsch 204|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=D:\nlg5_1\ChargeStar_204_D
+
+[Package|ChargeStar Deutsch 204|Configure DAO ISAMs]
+Applicable=No
+
+[Package|ChargeStar Deutsch 204|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|ChargeStar Deutsch 204|Files Found]
+ChargeStarHelp_E.cnt=D:\nlg5_1\ChargeStarHelp_E.cnt
+mesa.dll=C:\WINDOWS\SYSTEM\mesa.dll
+
+[Package|ChargeStar Deutsch 204|Files Released]
+
+[Package|ChargeStar Deutsch 204|Missing Dependency Information]
+E:\Programme\casanova\COMDLG32.OCX=
+
+[Package|ChargeStar Deutsch 204|Out-of-Date Dependency Information]
+
+[Package|ChargeStar Deutsch 204|Files Added]
+d:\nlg5_1\myprofiles\bsppb72v.pfl=
+d:\nlg5_1\help_file\chargestarhelp.cnt=
+d:\nlg5_1\default.ini=
+d:\nlg5_1\defneu.ini=
+d:\nlg5_1\myprofiles\dryfit_120v_70ah.pfl=
+d:\nlg5_1\myprofiles\dryfit_144v_70ah.pfl=
+d:\nlg5_1\help_file\chargestarhelp.gid=
+d:\nlg5_1\help_file\chargestarhelp.fts=
+mesa.dll=
+d:\nlg5_1\help_file\chargestarhelp_e.gid=
+d:\nlg5_1\chargestarhelp_e.hlp=
+d:\nlg5_1\chargestarhelp_e.cnt=
+d:\nlg5_1\help_file\chargestarhelp_e.fts=
+d:\nlg5_1\help_file\chargestarhelp_d.gid=
+d:\nlg5_1\chargestarhelp_d.fts=
+d:\nlg5_1\chargestarhelp_d.cnt=
+d:\nlg5_1\chargestarhelp_d.hlp=
+d:\nlg5_1\liesmich.txt=
+
+[Package|ChargeStar Deutsch 204|Files Removed]
+d:\nlg5_1\myprofiles\bsppb72v.pfl=
+d:\nlg5_1\help_file\chargestarhelp.cnt=
+d:\nlg5_1\help_file\chargestarhelp.fts=
+d:\nlg5_1\help_file\chargestarhelp.gid=
+d:\nlg5_1\chargestarhelp_e.cnt=
+d:\nlg5_1\help_file\chargestarhelp_e.fts=
+d:\nlg5_1\help_file\chargestarhelp_e.gid=
+d:\nlg5_1\chargestarhelp_e.hlp=
+
+[Package|ChargeStar Deutsch 204|Files In Project]
+C:\WINDOWS\SYSTEM\MSVBVM60.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINDOWS\SYSTEM\VB6DE.DLL=Yes
+C:\WINDOWS\SYSTEM\cwui.ocx=Yes
+C:\WINDOWS\SYSTEM\mfc42.dll=Yes
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomm32.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCOMDE.DLL=Yes
+C:\WINDOWS\SYSTEM\MSCOMCTL.OCX=Yes
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=Yes
+C:\WINDOWS\SYSTEM\MSCOMCT2.OCX=Yes
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+D:\nlg5_1\myprofiles\BspPb72V.pfl=No
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=No
+D:\nlg5_1\default.ini=Yes
+D:\nlg5_1\defneu.ini=Yes
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=Yes
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=No
+C:\WINDOWS\SYSTEM\COMDLG32.OCX=Yes
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp_E.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.FTS=No
+D:\nlg5_1\ChargeStarHelp_E.hlp=No
+D:\nlg5_1\ChargeStarHelp_E.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp_D.GID=Yes
+D:\nlg5_1\ChargeStarHelp_D.FTS=Yes
+D:\nlg5_1\ChargeStarHelp_D.cnt=Yes
+D:\nlg5_1\ChargeStarHelp_D.hlp=Yes
+D:\nlg5_1\ChargeStar2_D.exe=Yes
+C:\WINDOWS\SYSTEM\mesa.dll=Yes
+D:\nlg5_1\Liesmich.txt=Yes
+
+[Package|ChargeStar Deutsch 204|Configure Registry Files]
+Applicable=No
+
+[Package|ChargeStar Deutsch 204|Configure Remote Servers]
+Applicable=No
+
+[Package|ChargeStar Deutsch 204|Install Locations]
+D:\nlg5_1\ChargeStar106.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\MSVBVM60.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINDOWS\SYSTEM\VB6DE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\cwui.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mfc42.dll=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomm32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\COMDLG32.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMCTL.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMCT2.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+D:\nlg5_1\myprofiles\BspPb72V.pfl=$(AppPath)\profiles
+D:\nlg5_1\ChargeStar1.exe=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=$(AppPath)
+D:\nlg5_1\default.ini=$(AppPath)
+D:\nlg5_1\defneu.ini=$(AppPath)
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=$(AppPath)\profiles
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=$(AppPath)\profiles
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=$(AppPath)
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=$(WinSysPath)
+E:\Programme\casanova\COMDLG32.OCX=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_E.GID=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_E.hlp=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_E.cnt=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_E.FTS=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_E.hlp=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_E.cnt=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_D.GID=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_D.FTS=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_D.cnt=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_D.hlp=$(AppPath)
+D:\nlg5_1\ChargeStar2_D.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\mesa.dll=$(WinSysPath)
+D:\nlg5_1\Liesmich.txt=$(AppPath)
+
+[Package|ChargeStar Deutsch 204|Configure Shared Files]
+Applicable=Yes
+D:\nlg5_1\ChargeStar106.exe=No
+D:\nlg5_1\myprofiles\BspPb72V.pfl=No
+D:\nlg5_1\ChargeStar1.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=No
+D:\nlg5_1\default.ini=No
+D:\nlg5_1\defneu.ini=No
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=No
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=No
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.hlp=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.FTS=No
+D:\nlg5_1\ChargeStarHelp_E.hlp=No
+D:\nlg5_1\ChargeStarHelp_E.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp_D.GID=No
+D:\nlg5_1\ChargeStarHelp_D.FTS=No
+D:\nlg5_1\ChargeStarHelp_D.cnt=No
+D:\nlg5_1\ChargeStarHelp_D.hlp=No
+D:\nlg5_1\ChargeStar2_D.exe=No
+D:\nlg5_1\Liesmich.txt=No
+
+[Package|ChargeStar Deutsch 204|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG5 V2.04
+
+[Package|ChargeStar Deutsch 204|Package]
+PackageFolder=D:\nlg5_1\ChargeStar_204_D
+ProjectFolder=D:\nlg5_1
+ServerSideCab=
+File1=D:\nlg5_1\ChargeStar_204_D\setup.exe
+File2=D:\nlg5_1\ChargeStar_204_D\Setup.Lst
+File3=D:\nlg5_1\ChargeStar_204_D\ChargeStar2_D.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+[Package|ChargeStar Deutsch 204|IconGroups]
+Group0=BRUSA ChargeStar NLG 5
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|ChargeStar Deutsch 204|BRUSA ChargeStar NLG 5]
+Icon1=ChargeStarHelp_D.hlp
+Title1=ChargeStar Hilfe
+StartIn1=$(AppPath)
+Key1=Icon4
+Icon2=Liesmich.txt
+Title2=Liesmich
+StartIn2=$(AppPath)
+Key2=Icon3
+Icon3=ChargeStar2_D.exe
+Title3=BRUSA ChargeStar NLG 5
+StartIn3=$(AppPath)
+Key3=Icon1
+
+
+[Package|ChargeStar English 204|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=D:\nlg5_1\ChargeStar_204_E
+
+[Package|ChargeStar English 204|Configure DAO ISAMs]
+Applicable=No
+
+[Package|ChargeStar English 204|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|ChargeStar English 204|Files Found]
+ChargeStarHelp_E.cnt=D:\nlg5_1\ChargeStarHelp_E.cnt
+mesa.dll=C:\WINDOWS\SYSTEM\mesa.dll
+
+[Package|ChargeStar English 204|Files Released]
+
+[Package|ChargeStar English 204|Missing Dependency Information]
+E:\Programme\casanova\COMDLG32.OCX=
+
+[Package|ChargeStar English 204|Out-of-Date Dependency Information]
+
+[Package|ChargeStar English 204|Files Added]
+d:\nlg5_1\myprofiles\bsppb72v.pfl=
+d:\nlg5_1\help_file\chargestarhelp.cnt=
+d:\nlg5_1\default.ini=
+d:\nlg5_1\defneu.ini=
+d:\nlg5_1\myprofiles\dryfit_120v_70ah.pfl=
+d:\nlg5_1\myprofiles\dryfit_144v_70ah.pfl=
+d:\nlg5_1\help_file\chargestarhelp.gid=
+d:\nlg5_1\help_file\chargestarhelp.fts=
+mesa.dll=
+d:\nlg5_1\help_file\chargestarhelp_e.gid=
+d:\nlg5_1\chargestarhelp_e.hlp=
+d:\nlg5_1\chargestarhelp_e.cnt=
+d:\nlg5_1\help_file\chargestarhelp_e.fts=
+d:\nlg5_1\help_file\chargestarhelp_d.gid=
+d:\nlg5_1\chargestarhelp_d.fts=
+d:\nlg5_1\chargestarhelp_d.cnt=
+d:\nlg5_1\chargestarhelp_d.hlp=
+d:\nlg5_1\liesmich.txt=
+D:\nlg5_1\Readme.txt=
+
+[Package|ChargeStar English 204|Files Removed]
+d:\nlg5_1\myprofiles\bsppb72v.pfl=
+d:\nlg5_1\help_file\chargestarhelp.cnt=
+d:\nlg5_1\help_file\chargestarhelp.fts=
+d:\nlg5_1\help_file\chargestarhelp.gid=
+d:\nlg5_1\chargestarhelp_d.cnt=
+d:\nlg5_1\chargestarhelp_d.fts=
+d:\nlg5_1\help_file\chargestarhelp_d.gid=
+d:\nlg5_1\chargestarhelp_d.hlp=
+d:\nlg5_1\liesmich.txt=
+
+[Package|ChargeStar English 204|Files In Project]
+C:\WINDOWS\SYSTEM\MSVBVM60.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINDOWS\SYSTEM\VB6DE.DLL=Yes
+C:\WINDOWS\SYSTEM\cwui.ocx=Yes
+C:\WINDOWS\SYSTEM\mfc42.dll=Yes
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=Yes
+C:\WINDOWS\SYSTEM\mscomm32.ocx=Yes
+C:\WINDOWS\SYSTEM\MSCOMDE.DLL=Yes
+C:\WINDOWS\SYSTEM\MSCOMCTL.OCX=Yes
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=Yes
+C:\WINDOWS\SYSTEM\MSCOMCT2.OCX=Yes
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=Yes
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+D:\nlg5_1\myprofiles\BspPb72V.pfl=No
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=No
+D:\nlg5_1\default.ini=Yes
+D:\nlg5_1\defneu.ini=Yes
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=Yes
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=No
+C:\WINDOWS\SYSTEM\COMDLG32.OCX=Yes
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp_E.GID=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp_E.FTS=Yes
+D:\nlg5_1\ChargeStarHelp_E.hlp=Yes
+D:\nlg5_1\ChargeStarHelp_E.cnt=Yes
+D:\nlg5_1\Help_File\ChargeStarHelp_D.GID=No
+D:\nlg5_1\ChargeStarHelp_D.FTS=No
+D:\nlg5_1\ChargeStarHelp_D.cnt=No
+D:\nlg5_1\ChargeStarHelp_D.hlp=No
+C:\WINDOWS\SYSTEM\mesa.dll=Yes
+D:\nlg5_1\Liesmich.txt=No
+D:\nlg5_1\ChargeStar2_E.exe=Yes
+D:\nlg5_1\Readme.txt=Yes
+
+[Package|ChargeStar English 204|Configure Registry Files]
+Applicable=No
+
+[Package|ChargeStar English 204|Configure Remote Servers]
+Applicable=No
+
+[Package|ChargeStar English 204|Install Locations]
+D:\nlg5_1\ChargeStar106.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\MSVBVM60.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINDOWS\SYSTEM\VB6DE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\cwui.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mfc42.dll=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSVCRT.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\mscomm32.ocx=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\COMDLG32.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\CMDLGDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMCTL.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCMCDE.DLL=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCOMCT2.OCX=$(WinSysPath)
+C:\WINDOWS\SYSTEM\MSCC2DE.DLL=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINDOWS\SYSTEM\VB6STKIT.DLL=$(WinSysPathSysFile)
+E:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+D:\nlg5_1\myprofiles\BspPb72V.pfl=$(AppPath)\profiles
+D:\nlg5_1\ChargeStar1.exe=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=$(AppPath)
+D:\nlg5_1\default.ini=$(AppPath)
+D:\nlg5_1\defneu.ini=$(AppPath)
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=$(AppPath)\profiles
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=$(AppPath)\profiles
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=$(AppPath)
+C:\Programme\National Instruments\Shared\Mesa\mesa.dll=$(WinSysPath)
+E:\Programme\casanova\COMDLG32.OCX=$(WinSysPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_E.GID=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_E.hlp=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_E.cnt=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_E.FTS=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_E.hlp=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_E.cnt=$(AppPath)
+D:\nlg5_1\Help_File\ChargeStarHelp_D.GID=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_D.FTS=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_D.cnt=$(AppPath)
+D:\nlg5_1\ChargeStarHelp_D.hlp=$(AppPath)
+D:\nlg5_1\ChargeStar2_D.exe=$(AppPath)
+C:\WINDOWS\SYSTEM\mesa.dll=$(WinSysPath)
+D:\nlg5_1\Liesmich.txt=$(AppPath)
+D:\nlg5_1\ChargeStar2_E.exe=$(AppPath)
+D:\nlg5_1\Readme.txt=$(AppPath)
+
+[Package|ChargeStar English 204|Configure Shared Files]
+Applicable=Yes
+D:\nlg5_1\ChargeStar106.exe=No
+D:\nlg5_1\myprofiles\BspPb72V.pfl=No
+D:\nlg5_1\ChargeStar1.exe=No
+D:\nlg5_1\Help_File\ChargeStarHelp.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp.hlp=No
+D:\nlg5_1\default.ini=No
+D:\nlg5_1\defneu.ini=No
+D:\nlg5_1\myprofiles\Dryfit_120V_70Ah.pfl=No
+D:\nlg5_1\myprofiles\Dryfit_144V_70Ah.pfl=No
+D:\nlg5_1\Help_File\ChargeStarHelp.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp.FTS=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.GID=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.hlp=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp_E.FTS=No
+D:\nlg5_1\ChargeStarHelp_E.hlp=No
+D:\nlg5_1\ChargeStarHelp_E.cnt=No
+D:\nlg5_1\Help_File\ChargeStarHelp_D.GID=No
+D:\nlg5_1\ChargeStarHelp_D.FTS=No
+D:\nlg5_1\ChargeStarHelp_D.cnt=No
+D:\nlg5_1\ChargeStarHelp_D.hlp=No
+D:\nlg5_1\ChargeStar2_D.exe=No
+D:\nlg5_1\Liesmich.txt=No
+D:\nlg5_1\ChargeStar2_E.exe=No
+D:\nlg5_1\Readme.txt=No
+
+[Package|ChargeStar English 204|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG5 V2.04
+
+[Package|ChargeStar English 204|IconGroups]
+Group0=BRUSA ChargeStar NLG 5
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|ChargeStar English 204|BRUSA ChargeStar NLG 5]
+Icon1=ChargeStarHelp_E.hlp
+Title1=ChargeStar Help
+StartIn1=$(AppPath)
+Key1=Icon4
+Icon2=Readme.txt
+Title2=Readme
+StartIn2=$(AppPath)
+Key2=Icon3
+Icon3=ChargeStar2_E.exe
+Title3=BRUSA ChargeStar NLG 5
+StartIn3=$(AppPath)
+Key3=Icon1
+
+[Package|ChargeStar English 204|Package]
+PackageFolder=D:\nlg5_1\ChargeStar_204_E
+ProjectFolder=D:\nlg5_1
+ServerSideCab=
+File1=D:\nlg5_1\ChargeStar_204_E\setup.exe
+File2=D:\nlg5_1\ChargeStar_204_E\Setup.Lst
+File3=D:\nlg5_1\ChargeStar_204_E\ChargeStar2_E.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+
+[Package|ChargeStar NLG5 V3 English|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=G:\nlg5_1\ChargeStar_3_E
+
+[Package|ChargeStar NLG5 V3 English|Configure DAO ISAMs]
+Applicable=No
+
+[Package|ChargeStar NLG5 V3 English|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|ChargeStar NLG5 V3 English|Files Found]
+
+[Package|ChargeStar NLG5 V3 English|Files Released]
+
+[Package|ChargeStar NLG5 V3 English|Missing Dependency Information]
+
+[Package|ChargeStar NLG5 V3 English|Out-of-Date Dependency Information]
+
+[Package|ChargeStar NLG5 V3 English|Files Added]
+c:\winnt\system32\mesa.dll=
+g:\nlg5_1\nlg5_can_spec_201.pdf=
+g:\nlg5_1\liesmich.txt=
+g:\nlg5_1\chargestarhelp_d.hlp=
+g:\nlg5_1\chargestarhelp_d.gid=
+g:\nlg5_1\chargestarhelp_d.cnt=
+g:\nlg5_1\profiles_release\nimh_288v_95ah.pfl=
+g:\nlg5_1\profiles_release\leadacid_dryfit_144v_70ah.pfl=
+g:\nlg5_1\profiles_release\leadacid_hawker_traction_evolution_304v_225ah.pfl=
+g:\nlg5_1\profiles_release\nicd_144v_180ah.pfl=
+g:\nlg5_1\profiles_release\nicd_96v_100ah_max23a.pfl=
+g:\nlg5_1\profiles_release\can_168v_180ah.pfl=
+g:\nlg5_1\defneu.ini=
+g:\nlg5_1\default.ini=
+g:\nlg5_1\chargestarhelp_e.hlp=
+g:\nlg5_1\chargestarhelp_e.gid=
+g:\nlg5_1\chargestarhelp_e.cnt=
+g:\nlg5_1\readme.txt=
+
+[Package|ChargeStar NLG5 V3 English|Files Removed]
+g:\nlg5_1\chargestarhelp_d.cnt=
+g:\nlg5_1\chargestarhelp_d.gid=
+g:\nlg5_1\chargestarhelp_d.hlp=
+g:\nlg5_1\liesmich.txt=
+c:\winnt\system32\msvcrt.dll=
+c:\winnt\system32\mfc42.dll=
+
+[Package|ChargeStar NLG5 V3 English|Files In Project]
+C:\WINNT\system32\MSVBVM60.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINNT\system32\VB6DE.DLL=Yes
+C:\WINNT\system32\MSCOMM32.OCX=Yes
+C:\WINNT\system32\MSCOMDE.DLL=Yes
+C:\WINNT\system32\COMDLG32.OCX=Yes
+C:\WINNT\system32\CMDLGDE.DLL=Yes
+C:\WINNT\system32\Mscomctl.ocx=Yes
+C:\WINNT\system32\MSCMCDE.DLL=Yes
+C:\WINNT\system32\Mscomct2.ocx=Yes
+C:\WINNT\system32\MSCC2DE.DLL=Yes
+C:\WINNT\system32\cwui.ocx=Yes
+C:\WINNT\system32\mfc42.dll=No
+C:\WINNT\system32\msvcrt.dll=No
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINNT\system32\VB6STKIT.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+C:\WINNT\system32\mesa.dll=Yes
+G:\nlg5_1\NLG5_CAN_Spec_201.pdf=Yes
+G:\nlg5_1\Liesmich.txt=No
+G:\nlg5_1\ChargeStarHelp_D.hlp=No
+G:\nlg5_1\ChargeStarHelp_D.GID=No
+G:\nlg5_1\ChargeStarHelp_D.cnt=No
+G:\nlg5_1\profiles_release\NiMH_288V_95Ah.pfl=Yes
+G:\nlg5_1\profiles_release\LeadAcid_Dryfit_144V_70Ah.pfl=Yes
+G:\nlg5_1\profiles_release\LeadAcid_Hawker_Traction_Evolution_304V_225Ah.pfl=Yes
+G:\nlg5_1\profiles_release\NiCd_144V_180Ah.pfl=Yes
+G:\nlg5_1\profiles_release\NiCd_96V_100Ah_max23A.pfl=Yes
+G:\nlg5_1\profiles_release\CAN_168V_180Ah.pfl=Yes
+G:\nlg5_1\defneu.ini=Yes
+G:\nlg5_1\default.ini=Yes
+G:\nlg5_1\ChargeStar3_E.exe=Yes
+G:\nlg5_1\ChargeStarHelp_E.hlp=Yes
+G:\nlg5_1\ChargeStarHelp_E.GID=Yes
+G:\nlg5_1\ChargeStarHelp_E.cnt=Yes
+G:\nlg5_1\Readme.txt=Yes
+
+[Package|ChargeStar NLG5 V3 English|Configure Registry Files]
+Applicable=No
+
+[Package|ChargeStar NLG5 V3 English|Configure Remote Servers]
+Applicable=No
+
+[Package|ChargeStar NLG5 V3 English|Install Locations]
+G:\nlg5_1\ChargeStar3_D.exe=$(AppPath)
+C:\WINNT\system32\MSVBVM60.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\VB6DE.DLL=$(WinSysPath)
+C:\WINNT\system32\MSCOMM32.OCX=$(WinSysPath)
+C:\WINNT\system32\MSCOMDE.DLL=$(WinSysPath)
+C:\WINNT\system32\COMDLG32.OCX=$(WinSysPath)
+C:\WINNT\system32\CMDLGDE.DLL=$(WinSysPath)
+C:\WINNT\system32\Mscomctl.ocx=$(WinSysPath)
+C:\WINNT\system32\MSCMCDE.DLL=$(WinSysPath)
+C:\WINNT\system32\Mscomct2.ocx=$(WinSysPath)
+C:\WINNT\system32\MSCC2DE.DLL=$(WinSysPath)
+C:\WINNT\system32\cwui.ocx=$(WinSysPath)
+C:\WINNT\system32\mfc42.dll=$(WinSysPath)
+C:\WINNT\system32\msvcrt.dll=$(WinSysPath)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINNT\system32\VB6STKIT.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+C:\WINNT\system32\mesa.dll=$(WinSysPath)
+G:\nlg5_1\NLG5_CAN_Spec_201.pdf=$(AppPath)
+G:\nlg5_1\Liesmich.txt=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_D.hlp=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_D.GID=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_D.cnt=$(AppPath)
+G:\nlg5_1\profiles_release\NiMH_288V_95Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\LeadAcid_Dryfit_144V_70Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\LeadAcid_Hawker_Traction_Evolution_304V_225Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\NiCd_144V_180Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\NiCd_96V_100Ah_max23A.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\CAN_168V_180Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\defneu.ini=$(AppPath)
+G:\nlg5_1\default.ini=$(AppPath)
+G:\nlg5_1\ChargeStar3_E.exe=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_E.hlp=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_E.GID=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_E.cnt=$(AppPath)
+G:\nlg5_1\Readme.txt=$(AppPath)
+
+[Package|ChargeStar NLG5 V3 English|Configure Shared Files]
+Applicable=Yes
+G:\nlg5_1\ChargeStar3_D.exe=No
+G:\nlg5_1\NLG5_CAN_Spec_201.pdf=No
+G:\nlg5_1\Liesmich.txt=No
+G:\nlg5_1\ChargeStarHelp_D.hlp=No
+G:\nlg5_1\ChargeStarHelp_D.GID=No
+G:\nlg5_1\ChargeStarHelp_D.cnt=No
+G:\nlg5_1\profiles_release\NiMH_288V_95Ah.pfl=No
+G:\nlg5_1\profiles_release\LeadAcid_Dryfit_144V_70Ah.pfl=No
+G:\nlg5_1\profiles_release\LeadAcid_Hawker_Traction_Evolution_304V_225Ah.pfl=No
+G:\nlg5_1\profiles_release\NiCd_144V_180Ah.pfl=No
+G:\nlg5_1\profiles_release\NiCd_96V_100Ah_max23A.pfl=No
+G:\nlg5_1\profiles_release\CAN_168V_180Ah.pfl=No
+G:\nlg5_1\defneu.ini=No
+G:\nlg5_1\default.ini=No
+G:\nlg5_1\ChargeStar3_E.exe=No
+G:\nlg5_1\ChargeStarHelp_E.hlp=No
+G:\nlg5_1\ChargeStarHelp_E.GID=No
+G:\nlg5_1\ChargeStarHelp_E.cnt=No
+G:\nlg5_1\Readme.txt=No
+
+[Package|ChargeStar NLG5 V3 English|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG5 V3
+
+[Package|ChargeStar NLG5 V3 English|Package]
+PackageFolder=G:\nlg5_1\ChargeStar_3_E
+ProjectFolder=G:\nlg5_1
+ServerSideCab=
+File1=G:\nlg5_1\ChargeStar_3_E\setup.exe
+File2=G:\nlg5_1\ChargeStar_3_E\Setup.Lst
+File3=G:\nlg5_1\ChargeStar_3_E\ChargeStar3_E.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+[Package|ChargeStar NLG5 V3 English|IconGroups]
+Group0=BRUSA ChargeStar NLG5 V3
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|ChargeStar NLG5 V3 English|BRUSA ChargeStar NLG5 V3]
+Icon1=Readme.txt
+Title1=Readme
+StartIn1=$(AppPath)
+Key1=Icon3
+Icon2=ChargeStarHelp_E.hlp
+Title2=ChargeStar Help
+StartIn2=$(AppPath)
+Key2=Icon4
+Icon3=ChargeStar3_E.exe
+Title3=BRUSA ChargeStar NLG5 V3
+StartIn3=$(AppPath)
+Key3=Icon1
+
+[Package|ChargeStar NLG5 V3 Deutsch|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=G:\nlg5_1\ChargeStar_3_D
+
+[Package|ChargeStar NLG5 V3 Deutsch|Configure DAO ISAMs]
+Applicable=No
+
+[Package|ChargeStar NLG5 V3 Deutsch|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|ChargeStar NLG5 V3 Deutsch|Files Found]
+
+[Package|ChargeStar NLG5 V3 Deutsch|Files Released]
+
+[Package|ChargeStar NLG5 V3 Deutsch|Missing Dependency Information]
+
+[Package|ChargeStar NLG5 V3 Deutsch|Out-of-Date Dependency Information]
+
+[Package|ChargeStar NLG5 V3 Deutsch|Files Added]
+c:\winnt\system32\mesa.dll=
+g:\nlg5_1\nlg5_can_spec_201.pdf=
+g:\nlg5_1\liesmich.txt=
+g:\nlg5_1\chargestarhelp_d.hlp=
+g:\nlg5_1\chargestarhelp_d.gid=
+g:\nlg5_1\chargestarhelp_d.cnt=
+g:\nlg5_1\profiles_release\nimh_288v_95ah.pfl=
+g:\nlg5_1\profiles_release\leadacid_dryfit_144v_70ah.pfl=
+g:\nlg5_1\profiles_release\leadacid_hawker_traction_evolution_304v_225ah.pfl=
+g:\nlg5_1\profiles_release\nicd_144v_180ah.pfl=
+g:\nlg5_1\profiles_release\nicd_96v_100ah_max23a.pfl=
+g:\nlg5_1\profiles_release\can_168v_180ah.pfl=
+g:\nlg5_1\defneu.ini=
+g:\nlg5_1\default.ini=
+
+[Package|ChargeStar NLG5 V3 Deutsch|Files Removed]
+c:\winnt\system32\mfc42.dll=
+c:\winnt\system32\msvcrt.dll=
+
+[Package|ChargeStar NLG5 V3 Deutsch|Files In Project]
+G:\nlg5_1\ChargeStar3_D.exe=Yes
+C:\WINNT\system32\MSVBVM60.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\WINNT\system32\VB6DE.DLL=Yes
+C:\WINNT\system32\MSCOMM32.OCX=Yes
+C:\WINNT\system32\MSCOMDE.DLL=Yes
+C:\WINNT\system32\COMDLG32.OCX=Yes
+C:\WINNT\system32\CMDLGDE.DLL=Yes
+C:\WINNT\system32\Mscomctl.ocx=Yes
+C:\WINNT\system32\MSCMCDE.DLL=Yes
+C:\WINNT\system32\Mscomct2.ocx=Yes
+C:\WINNT\system32\MSCC2DE.DLL=Yes
+C:\WINNT\system32\cwui.ocx=Yes
+C:\WINNT\system32\mfc42.dll=No
+C:\WINNT\system32\msvcrt.dll=No
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\WINNT\system32\VB6STKIT.DLL=Yes
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+C:\WINNT\system32\mesa.dll=Yes
+G:\nlg5_1\NLG5_CAN_Spec_201.pdf=Yes
+G:\nlg5_1\Liesmich.txt=Yes
+G:\nlg5_1\ChargeStarHelp_D.hlp=Yes
+G:\nlg5_1\ChargeStarHelp_D.GID=Yes
+G:\nlg5_1\ChargeStarHelp_D.cnt=Yes
+G:\nlg5_1\profiles_release\NiMH_288V_95Ah.pfl=Yes
+G:\nlg5_1\profiles_release\LeadAcid_Dryfit_144V_70Ah.pfl=Yes
+G:\nlg5_1\profiles_release\LeadAcid_Hawker_Traction_Evolution_304V_225Ah.pfl=Yes
+G:\nlg5_1\profiles_release\NiCd_144V_180Ah.pfl=Yes
+G:\nlg5_1\profiles_release\NiCd_96V_100Ah_max23A.pfl=Yes
+G:\nlg5_1\profiles_release\CAN_168V_180Ah.pfl=Yes
+G:\nlg5_1\defneu.ini=Yes
+G:\nlg5_1\default.ini=Yes
+
+[Package|ChargeStar NLG5 V3 Deutsch|Configure Registry Files]
+Applicable=No
+
+[Package|ChargeStar NLG5 V3 Deutsch|Configure Remote Servers]
+Applicable=No
+
+[Package|ChargeStar NLG5 V3 Deutsch|Install Locations]
+G:\nlg5_1\ChargeStar3_D.exe=$(AppPath)
+C:\WINNT\system32\MSVBVM60.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\WINNT\system32\VB6DE.DLL=$(WinSysPath)
+C:\WINNT\system32\MSCOMM32.OCX=$(WinSysPath)
+C:\WINNT\system32\MSCOMDE.DLL=$(WinSysPath)
+C:\WINNT\system32\COMDLG32.OCX=$(WinSysPath)
+C:\WINNT\system32\CMDLGDE.DLL=$(WinSysPath)
+C:\WINNT\system32\Mscomctl.ocx=$(WinSysPath)
+C:\WINNT\system32\MSCMCDE.DLL=$(WinSysPath)
+C:\WINNT\system32\Mscomct2.ocx=$(WinSysPath)
+C:\WINNT\system32\MSCC2DE.DLL=$(WinSysPath)
+C:\WINNT\system32\cwui.ocx=$(WinSysPath)
+C:\WINNT\system32\mfc42.dll=$(WinSysPath)
+C:\WINNT\system32\msvcrt.dll=$(WinSysPath)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\WINNT\system32\VB6STKIT.DLL=$(WinSysPathSysFile)
+C:\Programme\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+C:\WINNT\system32\mesa.dll=$(WinSysPath)
+G:\nlg5_1\NLG5_CAN_Spec_201.pdf=$(AppPath)
+G:\nlg5_1\Liesmich.txt=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_D.hlp=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_D.GID=$(AppPath)
+G:\nlg5_1\ChargeStarHelp_D.cnt=$(AppPath)
+G:\nlg5_1\profiles_release\NiMH_288V_95Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\LeadAcid_Dryfit_144V_70Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\LeadAcid_Hawker_Traction_Evolution_304V_225Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\NiCd_144V_180Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\NiCd_96V_100Ah_max23A.pfl=$(AppPath)\profiles
+G:\nlg5_1\profiles_release\CAN_168V_180Ah.pfl=$(AppPath)\profiles
+G:\nlg5_1\defneu.ini=$(AppPath)
+G:\nlg5_1\default.ini=$(AppPath)
+
+[Package|ChargeStar NLG5 V3 Deutsch|Configure Shared Files]
+Applicable=Yes
+G:\nlg5_1\ChargeStar3_D.exe=No
+G:\nlg5_1\NLG5_CAN_Spec_201.pdf=No
+G:\nlg5_1\Liesmich.txt=No
+G:\nlg5_1\ChargeStarHelp_D.hlp=No
+G:\nlg5_1\ChargeStarHelp_D.GID=No
+G:\nlg5_1\ChargeStarHelp_D.cnt=No
+G:\nlg5_1\profiles_release\NiMH_288V_95Ah.pfl=No
+G:\nlg5_1\profiles_release\LeadAcid_Dryfit_144V_70Ah.pfl=No
+G:\nlg5_1\profiles_release\LeadAcid_Hawker_Traction_Evolution_304V_225Ah.pfl=No
+G:\nlg5_1\profiles_release\NiCd_144V_180Ah.pfl=No
+G:\nlg5_1\profiles_release\NiCd_96V_100Ah_max23A.pfl=No
+G:\nlg5_1\profiles_release\CAN_168V_180Ah.pfl=No
+G:\nlg5_1\defneu.ini=No
+G:\nlg5_1\default.ini=No
+
+[Package|ChargeStar NLG5 V3 Deutsch|Distribution]
+Type=single
+Size=
+Title=BRUSA ChargeStar NLG5 V3
+
+[Package|ChargeStar NLG5 V3 Deutsch|Package]
+PackageFolder=G:\nlg5_1\ChargeStar_3_D
+ProjectFolder=G:\nlg5_1
+ServerSideCab=
+File1=G:\nlg5_1\ChargeStar_3_D\setup.exe
+File2=G:\nlg5_1\ChargeStar_3_D\Setup.Lst
+File3=G:\nlg5_1\ChargeStar_3_D\ChargeStar3_D.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz
+
+[Package|ChargeStar NLG5 V3 Deutsch|IconGroups]
+Group0=BRUSA ChargeStar NLG5 V3
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|ChargeStar NLG5 V3 Deutsch|BRUSA ChargeStar NLG5 V3]
+Icon1=ChargeStar3_D.exe
+Title1=BRUSA ChargeStar NLG5 V3
+StartIn1=$(AppPath)
+Key1=Icon1
+Icon2=Liesmich.txt
+Title2=Liesmich
+StartIn2=$(AppPath)
+Key2=Icon3
+Icon3=ChargeStarHelp_D.hlp
+Title3=ChargeStar Hilfe
+StartIn3=$(AppPath)
+Key3=Icon4

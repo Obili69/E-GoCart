@@ -1,0 +1,3 @@
+Die CAB-Datei für Ihre Anwendung wurde als 'G:\nlg5_1\ChargeStar_3_E\ChargeStar3_E.CAB' erstellt.
+
+Es gibt auch eine Stapelverarbeitungsdatei im unterstützenden Verzeichnis (G:\nlg5_1\ChargeStar_3_E\Support\ChargeStar3_E.BAT), mit der Sie die CAB-Datei erstellen können für den Fall, daß Sie Änderungen an einigen Dateien vornehmen.

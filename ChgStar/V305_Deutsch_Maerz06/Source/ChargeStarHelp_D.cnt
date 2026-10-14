@@ -1,0 +1,34 @@
+ * This help file was created with HelpScribble 6.2.0
+ * Registered to: BRUSA Elektronik AG
+
+:BASE ChargeStarHelp_D.hlp
+:TITLE BRUSA ChargeStar NLG 5 Help
+1 Einführung
+2 Was ist ChargeStar=Scribble10
+2 Installation=Scribble20
+2 Erste Schritte=Scribble30
+2 NLG programmieren
+3 Warum programmieren?=Scribble35
+3 Datei für Batterie vorhanden=Scribble37
+3 Datei für Batterie nicht vorhanden=Scribble38
+1 Einstellungen
+2 Verbindung PC - NLG=Scribble150
+2 Allgemeine Einstellungen=Scribble100
+2 Betriebsarten
+3 NLG Betriebsart=Scribble170
+3 Booster - Betrieb=Scribble180
+3 lineare Booster - Kennlinie=Scribble190
+1 Schutzfunktionen=Scribble200
+1 Optionen=Scribble210
+1 Eigenschaften=Scribble220
+1 Kennlinie
+2 Die Kennlinie=Scribble300
+2 Kennlinie programmieren=Scribble400
+2 I-Phase und U-Phase=Scribble320
+2 Status LEDs
+3 Status LEDs=Scribble330
+3 Beispiel Status LEDs=Scribble335
+1 Abschnittswechsel=Scribble350
+1 Programmierung überprüfen=Scribble450
+1 Anhang
+2 Weitere Informationen=Scribble500

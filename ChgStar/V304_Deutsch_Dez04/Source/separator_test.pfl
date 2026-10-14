@@ -1,0 +1,205 @@
+[BRUSA Elektronik AG]
+NLG 519
+
+
+[Allgemeine Einstellungen]
+Batterie_Nennspannung=120
+Temp_Koeff_Gasungsspannung=-0.27
+Anz_Aktive_Temperatursensoren=100
+Bezugs_Temp_Spannungen=33.5
+Max_Netz_Strom=16
+NLG_Betriebsart=0
+Ext_I_Min_Booster=6
+Ext_I_Max_Booster=10
+Temp_Reduktions_Art=0
+Batt_Temp_Derating=-5
+Temp_Derating_Null=50
+Batt_Hysterese_Ein=43
+Batt_Hysterese_Aus=45
+Batt_Temp_Ueber=60
+Batt_Spannung_Ueber=180
+Batt_Ladung_Mehr_Als=120
+Lade_Zeit_Mehr_Als=999
+CP_Ventilation_Bit=0
+CAN_Baud_Rate=32384
+CAN_Rx_ID_CTL=1560
+CAN_Tx_ID_ST=1552
+CAN_Tx_ID_ACT_I=1553
+CAN_Tx_ID_ACT_II=1554
+CAN_Tx_ID_TEMP=1555
+CAN_Tx_ID_ERR=1556
+
+
+[Abschnitt 1]
+Anzahl_Vorwaerts_Bedingungen=1
+Anzahl_Rueckwaerts_Bedingungen=0
+Max_Lade_Strom=25
+Max_Lade_Spannung=142
+I_Status_LED=002
+U_Status_LED=012
+Typ_Vorwaerts_Bedingung_1=30
+Wert_Vorwaerts_Bedingung_1=1
+Verknuepfung_Vorwaerts_Bed_12=0
+Typ_Vorwaerts_Bedingung_2=30
+Wert_Vorwaerts_Bedingung_2=0
+Verknuepfung_Vorwaerts_Bed_23=0
+Typ_Vorwaerts_Bedingung_3=0
+Wert_Vorwaerts_Bedingung_3=0
+Verknuepfung_Vorwaerts_Bed_34=0
+Typ_Vorwaerts_Bedingung_4=0
+Wert_Vorwaerts_Bedingung_4=0
+Verknuepfung_Vorwaerts_Bed_45=0
+Typ_Vorwaerts_Bedingung_5=0
+Wert_Vorwaerts_Bedingung_5=0
+
+
+[Abschnitt 2]
+Anzahl_Vorwaerts_Bedingungen=3
+Anzahl_Rueckwaerts_Bedingungen=0
+Max_Lade_Strom=1
+Max_Lade_Spannung=150
+I_Status_LED=022
+U_Status_LED=222
+Typ_Vorwaerts_Bedingung_1=41
+Wert_Vorwaerts_Bedingung_1=240
+Verknuepfung_Vorwaerts_Bed_12=0
+Typ_Vorwaerts_Bedingung_2=52
+Wert_Vorwaerts_Bedingung_2=5
+Verknuepfung_Vorwaerts_Bed_23=1
+Typ_Vorwaerts_Bedingung_3=51
+Wert_Vorwaerts_Bedingung_3=0.6
+Verknuepfung_Vorwaerts_Bed_34=0
+Typ_Vorwaerts_Bedingung_4=0
+Wert_Vorwaerts_Bedingung_4=0
+Verknuepfung_Vorwaerts_Bed_45=0
+Typ_Vorwaerts_Bedingung_5=0
+Wert_Vorwaerts_Bedingung_5=0
+
+
+[Abschnitt 3]
+Anzahl_Vorwaerts_Bedingungen=0
+Anzahl_Rueckwaerts_Bedingungen=0
+Max_Lade_Strom=0.5
+Max_Lade_Spannung=135
+I_Status_LED=200
+U_Status_LED=200
+Typ_Vorwaerts_Bedingung_1=0
+Wert_Vorwaerts_Bedingung_1=0
+Verknuepfung_Vorwaerts_Bed_12=0
+Typ_Vorwaerts_Bedingung_2=0
+Wert_Vorwaerts_Bedingung_2=0
+Verknuepfung_Vorwaerts_Bed_23=0
+Typ_Vorwaerts_Bedingung_3=0
+Wert_Vorwaerts_Bedingung_3=0
+Verknuepfung_Vorwaerts_Bed_34=0
+Typ_Vorwaerts_Bedingung_4=0
+Wert_Vorwaerts_Bedingung_4=0
+Verknuepfung_Vorwaerts_Bed_45=0
+Typ_Vorwaerts_Bedingung_5=0
+Wert_Vorwaerts_Bedingung_5=0
+
+
+[Abschnitt 4]
+Anzahl_Vorwaerts_Bedingungen=0
+Anzahl_Rueckwaerts_Bedingungen=0
+Max_Lade_Strom=0
+Max_Lade_Spannung=0
+I_Status_LED=000
+U_Status_LED=000
+Typ_Vorwaerts_Bedingung_1=0
+Wert_Vorwaerts_Bedingung_1=0
+Verknuepfung_Vorwaerts_Bed_12=0
+Typ_Vorwaerts_Bedingung_2=0
+Wert_Vorwaerts_Bedingung_2=0
+Verknuepfung_Vorwaerts_Bed_23=0
+Typ_Vorwaerts_Bedingung_3=0
+Wert_Vorwaerts_Bedingung_3=0
+Verknuepfung_Vorwaerts_Bed_34=0
+Typ_Vorwaerts_Bedingung_4=0
+Wert_Vorwaerts_Bedingung_4=0
+Verknuepfung_Vorwaerts_Bed_45=0
+Typ_Vorwaerts_Bedingung_5=0
+Wert_Vorwaerts_Bedingung_5=0
+
+
+[Abschnitt 5]
+Anzahl_Vorwaerts_Bedingungen=0
+Anzahl_Rueckwaerts_Bedingungen=0
+Max_Lade_Strom=0
+Max_Lade_Spannung=0
+I_Status_LED=000
+U_Status_LED=000
+Typ_Vorwaerts_Bedingung_1=0
+Wert_Vorwaerts_Bedingung_1=0
+Verknuepfung_Vorwaerts_Bed_12=0
+Typ_Vorwaerts_Bedingung_2=0
+Wert_Vorwaerts_Bedingung_2=0
+Verknuepfung_Vorwaerts_Bed_23=0
+Typ_Vorwaerts_Bedingung_3=0
+Wert_Vorwaerts_Bedingung_3=0
+Verknuepfung_Vorwaerts_Bed_34=0
+Typ_Vorwaerts_Bedingung_4=0
+Wert_Vorwaerts_Bedingung_4=0
+Verknuepfung_Vorwaerts_Bed_45=0
+Typ_Vorwaerts_Bedingung_5=0
+Wert_Vorwaerts_Bedingung_5=0
+
+
+[Abschnitt 6]
+Anzahl_Vorwaerts_Bedingungen=0
+Anzahl_Rueckwaerts_Bedingungen=0
+Max_Lade_Strom=0
+Max_Lade_Spannung=0
+I_Status_LED=000
+U_Status_LED=000
+Typ_Vorwaerts_Bedingung_1=0
+Wert_Vorwaerts_Bedingung_1=0
+Verknuepfung_Vorwaerts_Bed_12=0
+Typ_Vorwaerts_Bedingung_2=0
+Wert_Vorwaerts_Bedingung_2=0
+Verknuepfung_Vorwaerts_Bed_23=0
+Typ_Vorwaerts_Bedingung_3=0
+Wert_Vorwaerts_Bedingung_3=0
+Verknuepfung_Vorwaerts_Bed_34=0
+Typ_Vorwaerts_Bedingung_4=0
+Wert_Vorwaerts_Bedingung_4=0
+Verknuepfung_Vorwaerts_Bed_45=0
+Typ_Vorwaerts_Bedingung_5=0
+Wert_Vorwaerts_Bedingung_5=0
+
+
+[Abschnitt 7]
+Anzahl_Vorwaerts_Bedingungen=0
+Anzahl_Rueckwaerts_Bedingungen=0
+Max_Lade_Strom=0
+Max_Lade_Spannung=0
+I_Status_LED=000
+U_Status_LED=000
+Typ_Vorwaerts_Bedingung_1=0
+Wert_Vorwaerts_Bedingung_1=0
+Verknuepfung_Vorwaerts_Bed_12=0
+Typ_Vorwaerts_Bedingung_2=0
+Wert_Vorwaerts_Bedingung_2=0
+Verknuepfung_Vorwaerts_Bed_23=0
+Typ_Vorwaerts_Bedingung_3=0
+Wert_Vorwaerts_Bedingung_3=0
+Verknuepfung_Vorwaerts_Bed_34=0
+Typ_Vorwaerts_Bedingung_4=0
+Wert_Vorwaerts_Bedingung_4=0
+Verknuepfung_Vorwaerts_Bed_45=0
+Typ_Vorwaerts_Bedingung_5=0
+Wert_Vorwaerts_Bedingung_5=0
+
+
+[Start Kommentar]
+24. Jul. 2003	Default settings, if nothing is loaded.	
+Corresponds to a Sealed Lead Acid battery. 
+Nominal voltage 120V, capacity 100Ah
+  
+The charge algorithm consists of 3 charging stages:
+1) Section 1,  I-Phase:		Bulk charge
+2) Section 1, U-Phase:	Topping charge 
+3) Section 2:		Equalization charge
+(4) Section 3:		"End Of Charge",  not a real charging stage 
+
+[Ende Kommentar]
